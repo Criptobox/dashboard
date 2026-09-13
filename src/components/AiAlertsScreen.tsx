@@ -3,6 +3,7 @@ import { AiAction, PushSentinel, TokenItem } from '../types';
 import { TokenLogo } from './TokenLogo';
 import { TokenPriceAlertModal } from './TokenPriceAlertModal';
 import { PushNotificationBanner, PushNotificationData, playSentinelChime } from './PushNotificationBanner';
+import { ContractRugScannerWidget } from './ContractRugScannerWidget';
 import {
   Brain,
   ShieldCheck,
@@ -65,6 +66,7 @@ export const AiAlertsScreen: React.FC<AiAlertsScreenProps> = ({
   const [showPriceAlertModal, setShowPriceAlertModal] = useState(false);
   const [activePushNotification, setActivePushNotification] = useState<PushNotificationData | null>(null);
   const [sentinelFilter, setSentinelFilter] = useState<'all' | 'tokens' | 'security'>('all');
+  const [intelligenceTab, setIntelligenceTab] = useState<'scanner' | 'sentinels' | 'actions'>('scanner');
   const [notificationHistory, setNotificationHistory] = useState<PushNotificationData[]>([
     {
       id: 'init-1',
@@ -212,7 +214,7 @@ export const AiAlertsScreen: React.FC<AiAlertsScreenProps> = ({
                   <span className="w-1.5 h-1.5 rounded-full bg-[#4edea3] animate-ping" />
                 </div>
                 <h1 className="font-headline-md text-lg sm:text-xl text-[#e1e2ec] font-bold tracking-tight mt-0.5">
-                  Alertas IA & Centinelas Push
+                  Centro de Inteligencia & Seguridad
                 </h1>
               </div>
             </div>
@@ -240,12 +242,71 @@ export const AiAlertsScreen: React.FC<AiAlertsScreenProps> = ({
             </div>
           </div>
           <p className="text-xs text-[#bcc9cd] mt-2 leading-relaxed">
-            Monitorización en tiempo real de mempools L1/L2, oráculos descentralizados Pyth y umbrales de precio con alertas push instantáneas.
+            Monitorización en tiempo real de mempools L1/L2, análisis de bytecode para detección de rug-pulls, oráculos descentralizados Pyth y centinelas push.
           </p>
         </div>
       </div>
 
+      {/* INTELLIGENCE CENTER SUB-TABS */}
+      <div className="px-4">
+        <div className="p-1.5 rounded-2xl bg-[#14161f] border border-[#272a32] flex items-center gap-1.5 shadow-inner">
+          <button
+            onClick={() => setIntelligenceTab('scanner')}
+            className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-semibold font-sans flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              intelligenceTab === 'scanner'
+                ? 'bg-gradient-to-r from-[#ff5449]/20 to-[#ff7966]/20 text-white border border-[#ff5449]/40 shadow-sm'
+                : 'text-[#869397] hover:text-[#bcc9cd]'
+            }`}
+          >
+            <ShieldAlert className={`w-3.5 h-3.5 ${intelligenceTab === 'scanner' ? 'text-[#ff5449]' : ''}`} />
+            <span className="font-bold">Escáner Anti-Rugpull</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ff5449] animate-pulse" />
+          </button>
+
+          <button
+            onClick={() => setIntelligenceTab('sentinels')}
+            className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-semibold font-sans flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              intelligenceTab === 'sentinels'
+                ? 'bg-[#272a32] text-[#4cd7f6] border border-[#3d494c]/40 shadow-sm'
+                : 'text-[#869397] hover:text-[#bcc9cd]'
+            }`}
+          >
+            <Bell className={`w-3.5 h-3.5 ${intelligenceTab === 'sentinels' ? 'text-[#4cd7f6]' : ''}`} />
+            <span>Centinelas Push</span>
+            <span className="text-[10px] font-code-sm px-1.5 py-0.2 rounded bg-[#10131a] text-[#4cd7f6]">
+              {pushSentinels.filter((s) => s.enabled).length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setIntelligenceTab('actions')}
+            className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-semibold font-sans flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              intelligenceTab === 'actions'
+                ? 'bg-[#272a32] text-[#4edea3] border border-[#3d494c]/40 shadow-sm'
+                : 'text-[#869397] hover:text-[#bcc9cd]'
+            }`}
+          >
+            <Sparkles className={`w-3.5 h-3.5 ${intelligenceTab === 'actions' ? 'text-[#4edea3]' : ''}`} />
+            <span>Acciones IA</span>
+            <span className="text-[10px] font-code-sm px-1.5 py-0.2 rounded bg-[#10131a] text-[#4edea3]">
+              3
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* RUG-PULL SCANNER TAB */}
+      {intelligenceTab === 'scanner' && (
+        <div className="px-4">
+          <ContractRugScannerWidget
+            onShowToast={onShowToast}
+            onOpenSwap={onTriggerSwap}
+          />
+        </div>
+      )}
+
       {/* SECTION 1: AI AUTOMATIONS & OP PORTFOLIO */}
+      {intelligenceTab === 'actions' && (
       <div className="px-4 flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h2 className="font-headline-sm text-base text-[#e1e2ec] font-bold tracking-tight">
@@ -483,15 +544,10 @@ export const AiAlertsScreen: React.FC<AiAlertsScreenProps> = ({
             </div>
           ))}
       </div>
-
-      {/* DIVIDER WITH AMBIENT ICON */}
-      <div className="px-4 my-2 flex items-center gap-3 opacity-60">
-        <div className="h-[1px] flex-1 bg-[#3d494c]/40" />
-        <Radio className="w-4 h-4 text-[#4cd7f6]" />
-        <div className="h-[1px] flex-1 bg-[#3d494c]/40" />
-      </div>
+      )}
 
       {/* SECCIÓN 2: CENTRO DE ALERTAS Y CENTINELAS PUSH */}
+      {intelligenceTab === 'sentinels' && (
       <div className="px-4 flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <div>
@@ -748,6 +804,7 @@ export const AiAlertsScreen: React.FC<AiAlertsScreenProps> = ({
           </div>
         </div>
       </div>
+      )}
 
       {/* Modal 1: Dedicated Token Price Alert Configurator */}
       <TokenPriceAlertModal

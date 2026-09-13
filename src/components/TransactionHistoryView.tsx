@@ -25,12 +25,16 @@ import {
 } from 'lucide-react';
 import { TransactionRecord, TransactionInteractionType, TransactionStatus } from '../types';
 import { TransactionDetailModal } from './TransactionDetailModal';
+import { TransactionTypeIcon } from './TransactionTypeIcon';
+import { PendingTransactionProgress } from './PendingTransactionProgress';
+import { FlashbotsGasComparisonChart } from './FlashbotsGasComparisonChart';
 
 interface TransactionHistoryViewProps {
   transactions: TransactionRecord[];
   onUpdateTransactions?: (updater: (prev: TransactionRecord[]) => TransactionRecord[]) => void;
   onShowToast: (title: string, msg: string) => void;
   gasSaverMode?: boolean;
+  onToggleGasSaverMode?: () => void;
 }
 
 export const TransactionHistoryView: React.FC<TransactionHistoryViewProps> = ({
@@ -38,6 +42,7 @@ export const TransactionHistoryView: React.FC<TransactionHistoryViewProps> = ({
   onUpdateTransactions,
   onShowToast,
   gasSaverMode = false,
+  onToggleGasSaverMode,
 }) => {
   // Local state initialized with props, kept synchronized
   const [txList, setTxList] = useState<TransactionRecord[]>(initialTxs);
@@ -106,7 +111,7 @@ export const TransactionHistoryView: React.FC<TransactionHistoryViewProps> = ({
   };
 
   const handleSpeedUpTx = (txId: string) => {
-    setTxList((prev) =>
+    const updateFn = (prev: TransactionRecord[]) =>
       prev.map((tx) => {
         if (tx.id === txId) {
           return {
@@ -116,8 +121,12 @@ export const TransactionHistoryView: React.FC<TransactionHistoryViewProps> = ({
           };
         }
         return tx;
-      })
-    );
+      });
+
+    setTxList(updateFn);
+    if (onUpdateTransactions) {
+      onUpdateTransactions(updateFn);
+    }
     if (selectedTx && selectedTx.id === txId) {
       setSelectedTx((prev) =>
         prev
@@ -129,7 +138,7 @@ export const TransactionHistoryView: React.FC<TransactionHistoryViewProps> = ({
           : null
       );
     }
-    onShowToast('Gas Acelerado (+30%)', 'Transacción priorizada en los validadores de la mempool.');
+    onShowToast('Gas Acelerado (+30%)', 'Transacción priorizada con propina de bloque en mempool.');
   };
 
   const handleSimulateNewPendingTx = () => {
@@ -147,9 +156,22 @@ export const TransactionHistoryView: React.FC<TransactionHistoryViewProps> = ({
       explorerName: string;
     }[] = [
       {
+        type: 'bridge',
+        typeLabel: 'Puente Cross-Chain',
+        title: 'Puente Arbitrum → Base (Stargate / LayerZero)',
+        desc: 'Transferencia multichain con validación ultra-rápida entre L2s mediante endpoints OFT',
+        amount: '-0.85 ETH',
+        usd: '-$2,840.78',
+        chain: 'arb',
+        chainLabel: 'Arbitrum',
+        method: 'sendFrom(address,uint16,bytes32,uint256)',
+        explorerUrl: 'https://arbiscan.io/tx/0x',
+        explorerName: 'Arbiscan',
+      },
+      {
         type: 'swap',
         typeLabel: 'Canje Uniswap v3',
-        title: 'Swap 0.35 ETH → USDC (Flashbots)',
+        title: 'Swap 0.35 ETH → USDC (Flashbots Protect)',
         desc: 'Intercambio enrutado por constructor privado para evasión de arbitraje MEV',
         amount: '+1,168.40 USDC',
         usd: '+$1,168.40',
@@ -160,12 +182,25 @@ export const TransactionHistoryView: React.FC<TransactionHistoryViewProps> = ({
         explorerName: 'Etherscan',
       },
       {
+        type: 'airdrop',
+        typeLabel: 'Reclamo Airdrop',
+        title: 'Reclamo Airdrop LayerZero v2',
+        desc: 'Verificación de prueba Merkle criptográfica y reclamo de tokens ZRO en L1',
+        amount: '+850 ZRO',
+        usd: '+$3,145.00',
+        chain: 'eth',
+        chainLabel: 'Ethereum',
+        method: 'claim(uint256,bytes32[])',
+        explorerUrl: 'https://etherscan.io/tx/0x',
+        explorerName: 'Etherscan',
+      },
+      {
         type: 'rescue',
-        typeLabel: 'OmniVault Rescue',
-        title: 'Rescate de Depósito Atascado',
-        desc: 'Bundle privado Flashbots para extracción de saldo en contrato L1',
-        amount: '+$850.00 USDT',
-        usd: '+$850.00',
+        typeLabel: 'OmniVault Rescue MEV',
+        title: 'Rescate de Vault Vulnerable',
+        desc: 'Bundle privado Flashbots para extracción de saldo en contrato L1 con protección anti-sandwich',
+        amount: '+$1,450.00 USDT',
+        usd: '+$1,450.00',
         chain: 'eth',
         chainLabel: 'Ethereum',
         method: 'rescueVulnerableVault(address,bytes)',
@@ -218,7 +253,11 @@ export const TransactionHistoryView: React.FC<TransactionHistoryViewProps> = ({
       gasFeeUsd: '$2.40',
       gasUsed: '84,000 units',
       gasPriceGwei: 15.4,
+      optimalGasPriceGwei: 14.1,
+      optimalGasFeeUsd: '$2.18',
+      unoptimizedGasUsd: '$6.50',
       savedWithEcoGasUsd: '$4.10',
+      gasSavingsPercent: 63,
       contractMethod: pick.method,
       mevProtected: true,
       explorerUrl: `${pick.explorerUrl}${randomHex}`,
@@ -229,34 +268,14 @@ export const TransactionHistoryView: React.FC<TransactionHistoryViewProps> = ({
     if (onUpdateTransactions) {
       onUpdateTransactions((prev) => [newTx, ...prev]);
     }
-    onShowToast('Nueva Transacción en Mempool', 'Transacción transmitida. Observa las confirmaciones en tiempo real.');
-  };
-
-  const getInteractionIcon = (type: TransactionInteractionType) => {
-    switch (type) {
-      case 'swap':
-        return <ArrowLeftRight className="w-4 h-4 text-[#4cd7f6]" />;
-      case 'rescue':
-        return <ShieldCheck className="w-4 h-4 text-[#4edea3]" />;
-      case 'send':
-        return <ArrowUpRight className="w-4 h-4 text-[#ffb4ab]" />;
-      case 'receive':
-        return <ArrowDownLeft className="w-4 h-4 text-[#4edea3]" />;
-      case 'airdrop':
-        return <Sparkles className="w-4 h-4 text-[#d0bcff]" />;
-      case 'approval':
-        return <KeyRound className="w-4 h-4 text-[#ffdbcd]" />;
-      case 'staking':
-        return <Coins className="w-4 h-4 text-[#acedff]" />;
-      default:
-        return <RefreshCw className="w-4 h-4 text-[#bcc9cd]" />;
-    }
+    onShowToast('Nueva Transacción en Mempool', `Transacción de tipo ${pick.typeLabel} transmitida. Observa las confirmaciones en tiempo real.`);
   };
 
   // Filter logic
   const filteredTransactions = txList.filter((tx) => {
     // Type filter
     if (selectedTypeFilter !== 'all') {
+      if (selectedTypeFilter === 'bridge' && tx.type !== 'bridge') return false;
       if (selectedTypeFilter === 'swap' && tx.type !== 'swap') return false;
       if (selectedTypeFilter === 'rescue' && tx.type !== 'rescue') return false;
       if (selectedTypeFilter === 'transfers' && tx.type !== 'send' && tx.type !== 'receive') return false;
@@ -332,6 +351,16 @@ export const TransactionHistoryView: React.FC<TransactionHistoryViewProps> = ({
         </div>
       </div>
 
+      {/* Flashbots Optimal Gas Comparison Visualizer */}
+      <FlashbotsGasComparisonChart
+        transactions={txList}
+        gasSaverMode={gasSaverMode}
+        onToggleGasSaverMode={onToggleGasSaverMode}
+        onSelectTransaction={(tx) => setSelectedTx(tx)}
+        selectedTxId={selectedTx?.id}
+        onShowToast={onShowToast}
+      />
+
       {/* Search & Filter Bar */}
       <div className="space-y-2.5">
         <div className="flex flex-col sm:flex-row gap-2">
@@ -374,10 +403,11 @@ export const TransactionHistoryView: React.FC<TransactionHistoryViewProps> = ({
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
           {[
             { id: 'all', label: 'Todas las Interacciones' },
+            { id: 'bridge', label: 'Puentes (Bridge)' },
             { id: 'swap', label: 'Canjes (Swaps)' },
+            { id: 'airdrop', label: 'Airdrops' },
             { id: 'rescue', label: 'Rescates MEV' },
             { id: 'transfers', label: 'Envíos / Recibos' },
-            { id: 'airdrop', label: 'Airdrops' },
             { id: 'approval', label: 'Aprobaciones' },
             { id: 'staking', label: 'DeFi / Staking' },
           ].map((tab) => (
@@ -451,9 +481,7 @@ export const TransactionHistoryView: React.FC<TransactionHistoryViewProps> = ({
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   {/* Left Side: Interaction Type, Icon, Title, and Real-Time Badge */}
                   <div className="flex items-start gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-2xl bg-[#272a32] border border-[#3d494c]/40 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
-                      {getInteractionIcon(tx.type)}
-                    </div>
+                    <TransactionTypeIcon type={tx.type} status={tx.status} size="md" />
 
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1.5">
@@ -464,6 +492,32 @@ export const TransactionHistoryView: React.FC<TransactionHistoryViewProps> = ({
                         <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#272a32] text-[#bcc9cd] border border-[#3d494c]/40">
                           {tx.chainLabel}
                         </span>
+
+                        {/* Dynamic Type Badge */}
+                        {tx.type === 'bridge' && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-950/70 text-indigo-300 border border-indigo-500/40 flex items-center gap-1 shadow-xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+                            Bridge L1⇄L2
+                          </span>
+                        )}
+                        {tx.type === 'swap' && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#003640]/70 text-[#4cd7f6] border border-[#4cd7f6]/40 flex items-center gap-1 shadow-xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#4cd7f6]" />
+                            Swap DEX
+                          </span>
+                        )}
+                        {tx.type === 'airdrop' && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-950/70 text-[#d0bcff] border border-purple-500/40 flex items-center gap-1 shadow-xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#d0bcff]" />
+                            Airdrop
+                          </span>
+                        )}
+                        {tx.type === 'rescue' && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/70 text-[#4edea3] border border-emerald-500/40 flex items-center gap-1 shadow-xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#4edea3]" />
+                            MEV Rescue
+                          </span>
+                        )}
 
                         {/* Real-time Confirmation Badge */}
                         {tx.status === 'confirmed' && (
@@ -538,7 +592,22 @@ export const TransactionHistoryView: React.FC<TransactionHistoryViewProps> = ({
                       <div className="flex items-center sm:justify-end gap-1 text-[11px] text-[#869397] font-code-sm">
                         <span>{tx.amountUsdDisplay}</span>
                         <span>•</span>
-                        <span className="text-[#bcc9cd]">Gas {tx.gasFeeUsd}</span>
+                        <span className="text-[#4cd7f6]">Gas: {tx.gasFeeUsd}</span>
+                      </div>
+                      {/* Flashbots Optimal Comparison & Savings Tag */}
+                      <div className="flex items-center sm:justify-end gap-1.5 mt-0.5">
+                        {tx.optimalGasFeeUsd && (
+                          <span className="text-[10px] font-code-sm text-[#869397] hidden md:inline">
+                            Óptimo: <span className="text-emerald-400">{tx.optimalGasFeeUsd}</span>
+                          </span>
+                        )}
+                        {tx.savedWithEcoGasUsd && (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[10px] font-bold font-code-sm bg-[#00a572]/15 text-[#4edea3] border border-[#00a572]/30">
+                            <Sparkles className="w-2.5 h-2.5" />
+                            <span>+{tx.savedWithEcoGasUsd}</span>
+                            {tx.gasSavingsPercent && <span>(-{tx.gasSavingsPercent}%)</span>}
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -570,6 +639,18 @@ export const TransactionHistoryView: React.FC<TransactionHistoryViewProps> = ({
                     </div>
                   </div>
                 </div>
+
+                {/* Prominent Animated Progress Bar for Pending Transactions */}
+                {tx.status === 'pending' && (
+                  <PendingTransactionProgress
+                    txId={tx.id}
+                    confirmations={tx.confirmations}
+                    requiredConfirmations={tx.requiredConfirmations}
+                    blockNumber={tx.blockNumber}
+                    type={tx.type}
+                    onSpeedUp={handleSpeedUpTx}
+                  />
+                )}
               </motion.div>
             );
           })

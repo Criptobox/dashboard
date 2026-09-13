@@ -74,6 +74,30 @@ export interface TokenItem {
   iconType: 'eth' | 'sol' | 'usd' | 'pol' | 'link';
 }
 
+export interface TokenHistoricalVolumePoint {
+  dayLabel: string; // e.g., 'Lun', 'Mar', 'Mié', etc.
+  date: string;
+  volumeUsd: number;
+}
+
+export interface TokenDetailedMetrics {
+  symbol: string;
+  name: string;
+  marketCapUsd: number;
+  fdvUsd: number;
+  marketCapRank: number;
+  circulatingSupply: string;
+  volume24hUsd: number;
+  volume7dAvgUsd: number;
+  volume30dTotalUsd: number;
+  volumeToMarketCapRatio: number;
+  totalLiquidityUsd: number;
+  depth2PercentUsd: number;
+  slippage25kPercent: number;
+  mainDexPools: string[];
+  historicalVolume7d: TokenHistoricalVolumePoint[];
+}
+
 export interface RecoverableContract {
   id: string;
   title: string;
@@ -103,6 +127,9 @@ export interface NftItem {
   floorPrice: string;
   floorUsd: string;
   rarityBadge?: string;
+  rarityTier?: 'Mítico' | 'Legendario' | 'Épico' | 'Raro' | 'Común';
+  rarityRank?: number;
+  rarityPercentile?: string;
   receivedOfferBadge?: string;
   huddleBadge?: string;
   alertThreshold?: string;
@@ -165,7 +192,8 @@ export type TransactionInteractionType =
   | 'rescue'
   | 'approval'
   | 'airdrop'
-  | 'staking';
+  | 'staking'
+  | 'bridge';
 
 export type TransactionStatus = 'confirmed' | 'pending' | 'failed';
 
@@ -195,8 +223,68 @@ export interface TransactionRecord {
   gasUsed: string;
   gasPriceGwei: number;
   savedWithEcoGasUsd?: string;
+  optimalGasPriceGwei?: number;
+  optimalGasFeeUsd?: string;
+  unoptimizedGasUsd?: string;
+  gasSavingsPercent?: number;
   contractMethod?: string;
   mevProtected?: boolean;
   explorerUrl: string;
   explorerName: string;
+}
+
+export type SignatureSeverity = 'critical' | 'high' | 'medium' | 'info';
+
+export type VulnerabilityCategory =
+  | 'mint_abuse'
+  | 'honeypot_tax'
+  | 'liquidity_drain'
+  | 'blacklist_freeze'
+  | 'proxy_takeover'
+  | 'fake_renounce';
+
+export interface SuspiciousSignature {
+  id: string;
+  selector: string;
+  name: string;
+  category: VulnerabilityCategory;
+  categoryLabel: string;
+  severity: SignatureSeverity;
+  description: string;
+  exploitMechanism: string;
+  historicalRugExamples: string[];
+  detectionCount: number;
+}
+
+export interface ContractSimulation {
+  canBuy: boolean;
+  canSell: boolean;
+  buyTaxPct: number;
+  sellTaxPct: number;
+  honeypotDetected: boolean;
+  isBlacklistCapable: boolean;
+  isMaxWalletRestricted: boolean;
+  simulationGasUnits: number;
+  simulationResultNote: string;
+}
+
+export interface ScannedContract {
+  id: string;
+  address: string;
+  name: string;
+  symbol: string;
+  chain: string;
+  chainLabel: string;
+  deployedAt: string;
+  deployerAddress: string;
+  initialLiquidityUsd: number;
+  liquidityLocked: boolean;
+  lockDuration?: string;
+  verifiedSource: boolean;
+  safetyScore: number;
+  riskLevel: 'critical' | 'high' | 'moderate' | 'safe';
+  matchedSignatures: SuspiciousSignature[];
+  simulation: ContractSimulation;
+  aiSummary: string;
+  status: 'quarantined' | 'flagged' | 'monitoring' | 'safe';
 }

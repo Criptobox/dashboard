@@ -1,11 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { TokenItem, ScreenTab, TransactionRecord } from '../types';
 import { TokenLogo } from './TokenLogo';
 import { TokenRowItem } from './TokenRowItem';
+import { AiRiskBadge } from './AiRiskBadge';
 import { TransactionHistoryView } from './TransactionHistoryView';
 import { NetworkHeatmapWidget } from './NetworkHeatmapWidget';
 import { NetworkAllocationPieChart } from './NetworkAllocationPieChart';
+import { PortfolioPerformanceChart } from './PortfolioPerformanceChart';
+import { MarketPulseBackground } from './MarketPulseBackground';
+import { TokenComparisonSection } from './TokenComparisonSection';
+import { PortfolioImpactCalculator } from './PortfolioImpactCalculator';
+import { calculatePortfolioRisk } from '../utils/portfolioImpactCalculator';
 import { INITIAL_TRANSACTIONS } from '../data/mockData';
 import {
   Eye,
@@ -26,6 +32,9 @@ import {
   Sparkles,
   RefreshCw,
   Zap,
+  Scale,
+  BrainCircuit,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface DashboardScreenProps {
@@ -58,7 +67,23 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   onUpdateTransactions,
 }) => {
   const [hideBalance, setHideBalance] = useState(false);
-  const [activeAssetTab, setActiveAssetTab] = useState<'tokens' | 'defi' | 'history'>('tokens');
+  const [activeAssetTab, setActiveAssetTab] = useState<'tokens' | 'impact' | 'compare' | 'defi' | 'history'>('tokens');
+  const [compareTokenAId, setCompareTokenAId] = useState<string>('eth');
+  const [compareTokenBId, setCompareTokenBId] = useState<string>('sol');
+
+  // Compute live portfolio risk metrics
+  const portfolioRisk = React.useMemo(() => calculatePortfolioRisk(tokens), [tokens]);
+
+  const handleCompareTokenFromRow = (selectedToken: TokenItem) => {
+    if (selectedToken.id === compareTokenAId) {
+      // Already selected as Token A
+    } else {
+      setCompareTokenBId(compareTokenAId);
+      setCompareTokenAId(selectedToken.id);
+    }
+    setActiveAssetTab('compare');
+    onShowToast('Comparador de Tokens', `Analizando métricas de ${selectedToken.symbol} frente a frente`);
+  };
 
   const chainsBar = [
     { id: 'all', name: 'Todas (8)', val: 84920.45 },
@@ -86,9 +111,26 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const displayTotal = currentChain === 'all' ? totalTokensValue : chainValue;
 
   const [isSyncingPrices, setIsSyncingPrices] = useState(false);
+  const [pulseCount, setPulseCount] = useState(1);
+  const prevPriceHash = useRef(tokens.map((t) => t.priceUsd).join(','));
+
+  // Automatically trigger subtle particle pulse animation whenever token prices update
+  useEffect(() => {
+    const currentPriceHash = tokens.map((t) => t.priceUsd).join(',');
+    if (prevPriceHash.current !== currentPriceHash) {
+      prevPriceHash.current = currentPriceHash;
+      setPulseCount((prev) => prev + 1);
+    }
+  }, [tokens]);
+
+  // Overall market trend based on tokens 24h weighted change
+  const totalChange24h = tokens.reduce((sum, t) => sum + (t.change24h * t.valueUsd), 0) / (totalTokensValue || 1);
+  const marketTrend: 'bullish' | 'bearish' | 'neutral' =
+    totalChange24h >= 0.05 ? 'bullish' : totalChange24h <= -0.05 ? 'bearish' : 'neutral';
 
   const handleSyncPrices = () => {
     setIsSyncingPrices(true);
+    setPulseCount((prev) => prev + 1);
     if (onSimulateMarketPulse) {
       onSimulateMarketPulse();
     }
@@ -98,14 +140,21 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   };
 
   return (
-    <div className="flex flex-col w-full px-4 space-y-4 pb-12 animate-in fade-in duration-200">
+    <div className="relative flex flex-col w-full px-4 space-y-4 pb-12 animate-in fade-in duration-200">
+      {/* Dynamic Particle Background reacting to Market Pulse & Price Updates */}
+      <MarketPulseBackground
+        pulseTrigger={pulseCount}
+        isSyncing={isSyncingPrices}
+        marketTrend={marketTrend}
+      />
+
       {/* Consolidated Balance Card */}
-      <div className="relative overflow-hidden rounded-2xl bg-[#272a32]/80 border border-[#3d494c]/50 p-5 shadow-xl">
+      <div className="relative z-10 overflow-hidden rounded-2xl bg-[#272a32]/80 backdrop-blur-xs border border-[#3d494c]/50 p-5 shadow-xl">
         {/* Ambient Holographic Glow Blooms */}
         <div className="absolute -right-16 -top-16 w-56 h-56 bg-[#4cd7f6]/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -left-12 -bottom-12 w-48 h-48 bg-[#4edea3]/10 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="relative z-10 flex items-center justify-between">
+        <div className="relative z-10 flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] text-[#bcc9cd] uppercase tracking-widest font-semibold font-sans">
               Valor Neto Consolidado
@@ -119,9 +168,23 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </button>
           </div>
 
-          <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#4edea3]/15 text-[#4edea3] border border-[#4edea3]/20">
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span className="font-code-sm text-xs font-bold">+8.42%</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSyncPrices}
+              disabled={isSyncingPrices}
+              className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#10131a]/80 hover:bg-[#10131a] text-[#4cd7f6] border border-[#4cd7f6]/30 text-[10px] font-code-sm font-semibold transition-all cursor-pointer active:scale-95"
+              title="Pulsar oráculo de precios y emitir onda reactiva de partículas"
+            >
+              <Zap className={`w-3 h-3 ${isSyncingPrices ? 'animate-bounce text-[#4edea3]' : 'text-[#4cd7f6]'}`} />
+              <span className="hidden sm:inline">Market Pulse:</span>
+              <span>{isSyncingPrices ? 'PULSANDO...' : 'EN VIVO'}</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#4edea3] animate-ping" />
+            </button>
+
+            <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#4edea3]/15 text-[#4edea3] border border-[#4edea3]/20">
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span className="font-code-sm text-xs font-bold">+8.42%</span>
+            </div>
           </div>
         </div>
 
@@ -184,7 +247,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       </div>
 
       {/* Quick Action Orb Buttons */}
-      <div className="grid grid-cols-4 gap-2 py-1">
+      <div className="relative z-10 grid grid-cols-4 gap-2 py-1">
         <button
           onClick={() => onOpenActionModal('send')}
           className="flex flex-col items-center gap-1.5 group cursor-pointer focus:outline-none"
@@ -224,6 +287,53 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </div>
           <span className="text-xs font-semibold text-[#e1e2ec]">Bridge</span>
         </button>
+      </div>
+
+      {/* Global Portfolio AI Risk Overview Banner */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#191b23] via-[#1c1f28] to-[#242731] p-4 border border-[#3d494c]/50 shadow-md">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-sm border"
+              style={{
+                backgroundColor: `${portfolioRisk.themeColor}1a`,
+                borderColor: `${portfolioRisk.themeColor}40`,
+                color: portfolioRisk.themeColor,
+              }}
+            >
+              <BrainCircuit className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-[#e1e2ec]">Riesgo IA Global de Cartera</span>
+                <span
+                  className="px-2 py-0.5 rounded-full text-[10px] font-extrabold font-code-sm"
+                  style={{
+                    backgroundColor: `${portfolioRisk.themeColor}25`,
+                    color: portfolioRisk.themeColor,
+                  }}
+                >
+                  {portfolioRisk.weightedScore} / 100 • {portfolioRisk.riskLevel.toUpperCase()}
+                </span>
+              </div>
+              <p className="text-xs text-[#bcc9cd] mt-0.5">
+                Seguridad contratos: <span className="text-[#4edea3] font-semibold">{portfolioRisk.weightedContractSecurity}%</span> • Volatilidad: <span className="text-[#4cd7f6] font-semibold">{portfolioRisk.weightedHistoricalVolatility}%</span>
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              setActiveAssetTab('impact');
+              onShowToast('Calculadora de Impacto', 'Simula la variación del riesgo antes de ejecutar un swap');
+            }}
+            className="px-3.5 py-1.5 rounded-full bg-[#272a32] hover:bg-[#32353d] text-[#4cd7f6] hover:text-[#acedff] border border-[#4cd7f6]/40 text-xs font-bold font-sans flex items-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#4edea3]" />
+            <span>Simular Impacto Swap</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
       {/* Smart Security Rescue Alert Banner */}
@@ -292,6 +402,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         </div>
       </div>
 
+      {/* Portfolio Performance Line Chart (Recharts) */}
+      <PortfolioPerformanceChart
+        currentTotal={displayTotal}
+        hideBalance={hideBalance}
+        currentChain={currentChain}
+        onShowToast={onShowToast}
+      />
+
       {/* Network Asset Allocation Circular Chart (Pie Chart) */}
       <NetworkAllocationPieChart
         tokens={tokens}
@@ -350,10 +468,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
       {/* Asset Segmented Navigation Tabs */}
       <div className="pt-1">
-        <div className="flex p-1 rounded-xl bg-[#191b23] border border-[#272a32]">
+        <div className="flex p-1 rounded-xl bg-[#191b23] border border-[#272a32] overflow-x-auto scrollbar-none">
           <button
             onClick={() => setActiveAssetTab('tokens')}
-            className={`flex-1 py-2 text-center rounded-lg text-xs font-bold transition-all ${
+            className={`flex-1 min-w-[70px] py-2 text-center rounded-lg text-xs font-bold transition-all ${
               activeAssetTab === 'tokens'
                 ? 'bg-[#272a32] text-[#e1e2ec] shadow-sm'
                 : 'text-[#bcc9cd] hover:text-[#e1e2ec]'
@@ -363,23 +481,51 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </button>
           <button
             onClick={() => {
+              setActiveAssetTab('impact');
+              onShowToast('Calculadora de Impacto', 'Prediciendo cambios de riesgo IA para swaps de cartera');
+            }}
+            className={`flex-1 min-w-[95px] py-2 text-center rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+              activeAssetTab === 'impact'
+                ? 'bg-[#272a32] text-[#4edea3] shadow-sm'
+                : 'text-[#bcc9cd] hover:text-[#e1e2ec]'
+            }`}
+          >
+            <BrainCircuit className="w-3.5 h-3.5" />
+            <span>Impacto IA</span>
+          </button>
+          <button
+            onClick={() => {
+              setActiveAssetTab('compare');
+              onShowToast('Comparador Lado a Lado', 'Comparativa institucional de Market Cap, Riesgo IA, Liquidez y Volumen');
+            }}
+            className={`flex-1 min-w-[85px] py-2 text-center rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+              activeAssetTab === 'compare'
+                ? 'bg-[#272a32] text-[#4cd7f6] shadow-sm'
+                : 'text-[#bcc9cd] hover:text-[#e1e2ec]'
+            }`}
+          >
+            <Scale className="w-3.5 h-3.5" />
+            <span>Comparar</span>
+          </button>
+          <button
+            onClick={() => {
               setActiveAssetTab('defi');
               onShowToast('Staking DeFi', 'Sincronizando posiciones de rendimiento en Aave y Uniswap');
             }}
-            className={`flex-1 py-2 text-center rounded-lg text-xs font-bold transition-all ${
+            className={`flex-1 min-w-[75px] py-2 text-center rounded-lg text-xs font-bold transition-all ${
               activeAssetTab === 'defi'
                 ? 'bg-[#272a32] text-[#e1e2ec] shadow-sm'
                 : 'text-[#bcc9cd] hover:text-[#e1e2ec]'
             }`}
           >
-            DeFi Staking
+            DeFi
           </button>
           <button
             onClick={() => {
               setActiveAssetTab('history');
               onShowToast('Historial Multichain', 'Consultando las últimas 24 transacciones');
             }}
-            className={`flex-1 py-2 text-center rounded-lg text-xs font-bold transition-all ${
+            className={`flex-1 min-w-[75px] py-2 text-center rounded-lg text-xs font-bold transition-all ${
               activeAssetTab === 'history'
                 ? 'bg-[#272a32] text-[#e1e2ec] shadow-sm'
                 : 'text-[#bcc9cd] hover:text-[#e1e2ec]'
@@ -391,11 +537,15 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       </div>
 
       {/* Token Portfolio Asset Feed Header & Pyth Oracle Status */}
-      <div className="flex items-center justify-between pt-1 px-1">
+      <div className="flex items-center justify-between pt-1 px-1 flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-[#e1e2ec]">
             {activeAssetTab === 'tokens'
               ? `Tokens en Cartera (${filteredTokens.length})`
+              : activeAssetTab === 'impact'
+              ? 'Calculadora de Impacto & Riesgo IA'
+              : activeAssetTab === 'compare'
+              ? 'Comparativa Lado a Lado de Tokens'
               : activeAssetTab === 'defi'
               ? 'Posiciones de Rendimiento'
               : `Historial de Bloques & Mempool (${transactions.length})`}
@@ -404,6 +554,18 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#10131a] border border-[#272a32] text-[10px] font-code-sm text-[#4edea3]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#4edea3] animate-pulse" />
               <span>Pyth Oracle</span>
+            </div>
+          )}
+          {activeAssetTab === 'impact' && (
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#10131a] border border-[#272a32] text-[10px] font-code-sm text-[#4edea3]">
+              <Sparkles className="w-2.5 h-2.5 text-[#4edea3]" />
+              <span>Motor Predictivo Cuántico</span>
+            </div>
+          )}
+          {activeAssetTab === 'compare' && (
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#10131a] border border-[#272a32] text-[10px] font-code-sm text-[#4cd7f6]">
+              <Sparkles className="w-2.5 h-2.5 text-[#4edea3]" />
+              <span>Auditoría IA & Métricas</span>
             </div>
           )}
           {activeAssetTab === 'defi' && (
@@ -421,15 +583,40 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         </div>
 
         {activeAssetTab === 'tokens' && (
-          <button
-            onClick={handleSyncPrices}
-            disabled={isSyncingPrices}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#272a32] hover:bg-[#32353d] text-[#4cd7f6] text-[11px] font-semibold transition-all border border-[#3d494c]/40 cursor-pointer disabled:opacity-60"
-            title="Sincronizar cotizaciones en vivo con el oráculo Pyth"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isSyncingPrices ? 'animate-spin text-[#4edea3]' : ''}`} />
-            <span>{isSyncingPrices ? 'Sincronizando...' : 'Actualizar Cotizaciones'}</span>
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => {
+                setActiveAssetTab('impact');
+                onShowToast('Calculadora de Impacto', 'Prediciendo cambios de riesgo IA para swaps de cartera');
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#272a32] hover:bg-[#32353d] text-[#4edea3] text-[11px] font-semibold transition-all border border-[#4edea3]/40 cursor-pointer shadow-sm active:scale-95"
+              title="Abrir calculadora de impacto y riesgo IA para swaps"
+            >
+              <BrainCircuit className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Simulador IA</span>
+              <span className="sm:hidden">Impacto</span>
+            </button>
+            <button
+              onClick={() => {
+                setActiveAssetTab('compare');
+                onShowToast('Comparador', 'Accediendo a la comparativa de tokens lado a lado');
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#272a32] hover:bg-[#32353d] text-[#4cd7f6] text-[11px] font-semibold transition-all border border-[#4cd7f6]/40 cursor-pointer shadow-sm active:scale-95"
+              title="Abrir vista dedicada del comparador de tokens"
+            >
+              <Scale className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Comparar</span>
+            </button>
+            <button
+              onClick={handleSyncPrices}
+              disabled={isSyncingPrices}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#272a32] hover:bg-[#32353d] text-[#4cd7f6] text-[11px] font-semibold transition-all border border-[#3d494c]/40 cursor-pointer disabled:opacity-60"
+              title="Sincronizar cotizaciones en vivo con el oráculo Pyth"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncingPrices ? 'animate-spin text-[#4edea3]' : ''}`} />
+              <span className="hidden sm:inline">{isSyncingPrices ? 'Sincronizando...' : 'Actualizar'}</span>
+            </button>
+          </div>
         )}
       </div>
 
@@ -442,9 +629,33 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.15 }}
-            className="space-y-2"
+            className="space-y-4"
           >
-            <motion.div layout className="space-y-2">
+            {/* Portfolio Impact Risk Calculator Widget */}
+            <PortfolioImpactCalculator
+              tokens={tokens}
+              onOpenActionModal={onOpenActionModal}
+              onShowToast={onShowToast}
+            />
+
+            {/* Inline Interactive Token Comparison Module */}
+            <TokenComparisonSection
+              tokens={tokens}
+              onOpenActionModal={onOpenActionModal}
+              onShowToast={onShowToast}
+              initialTokenAId={compareTokenAId}
+              initialTokenBId={compareTokenBId}
+            />
+
+            <motion.div layout className="space-y-2 pt-1">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-xs font-semibold text-[#869397] uppercase tracking-wider font-code-sm">
+                  Desglose de Cartera Individual
+                </span>
+                <span className="text-[11px] text-[#869397]">
+                  Usa "Comparar" o el "Simulador IA"
+                </span>
+              </div>
               <AnimatePresence mode="popLayout" initial={false}>
                 {filteredTokens.length === 0 ? (
                   <motion.div
@@ -468,11 +679,48 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                       token={token}
                       hideBalance={hideBalance}
                       onOpenActionModal={onOpenActionModal}
+                      onCompareToken={handleCompareTokenFromRow}
                     />
                   ))
                 )}
               </AnimatePresence>
             </motion.div>
+          </motion.div>
+        )}
+
+        {activeAssetTab === 'impact' && (
+          <motion.div
+            key="tab-impact"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.15 }}
+            className="space-y-3"
+          >
+            <PortfolioImpactCalculator
+              tokens={tokens}
+              onOpenActionModal={onOpenActionModal}
+              onShowToast={onShowToast}
+            />
+          </motion.div>
+        )}
+
+        {activeAssetTab === 'compare' && (
+          <motion.div
+            key="tab-compare"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.15 }}
+            className="space-y-3"
+          >
+            <TokenComparisonSection
+              tokens={tokens}
+              onOpenActionModal={onOpenActionModal}
+              onShowToast={onShowToast}
+              initialTokenAId={compareTokenAId}
+              initialTokenBId={compareTokenBId}
+            />
           </motion.div>
         )}
 
@@ -489,11 +737,12 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <div className="flex items-center gap-3">
                 <TokenLogo symbol="USDC" size="lg" />
                 <div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <h3 className="font-semibold text-sm text-[#e1e2ec]">Aave v3 Lending Vault</h3>
                     <span className="px-1.5 py-0.5 rounded bg-[#00a572]/20 text-[#4edea3] font-code-sm text-[10px] font-bold">
                       5.42% APY
                     </span>
+                    <AiRiskBadge symbol="USDC" tokenName="Aave v3 USDC Vault" size="sm" />
                   </div>
                   <p className="text-xs text-[#bcc9cd] mt-0.5">Depósito Activo • Ganancia diaria ~$2.80</p>
                 </div>
@@ -508,11 +757,12 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <div className="flex items-center gap-3">
                 <TokenLogo symbol="ETH" size="lg" />
                 <div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <h3 className="font-semibold text-sm text-[#e1e2ec]">Lido Liquid Staking (wstETH)</h3>
                     <span className="px-1.5 py-0.5 rounded bg-[#4cd7f6]/20 text-[#4cd7f6] font-code-sm text-[10px] font-bold">
                       3.85% APR
                     </span>
+                    <AiRiskBadge symbol="ETH" tokenName="Lido Liquid Staking" size="sm" />
                   </div>
                   <p className="text-xs text-[#bcc9cd] mt-0.5">Ethereum L1 • Rendimiento de Consenso</p>
                 </div>
@@ -538,6 +788,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               onUpdateTransactions={onUpdateTransactions}
               onShowToast={onShowToast}
               gasSaverMode={gasSaverMode}
+              onToggleGasSaverMode={onToggleGasSaverMode}
             />
           </motion.div>
         )}

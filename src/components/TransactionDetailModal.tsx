@@ -22,6 +22,8 @@ import {
   Fuel,
 } from 'lucide-react';
 import { TransactionRecord } from '../types';
+import { TransactionTypeIcon } from './TransactionTypeIcon';
+import { PendingTransactionProgress } from './PendingTransactionProgress';
 
 interface TransactionDetailModalProps {
   tx: TransactionRecord | null;
@@ -98,9 +100,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
           {/* Header */}
           <div className="p-5 border-b border-[#3d494c]/30 flex items-center justify-between sticky top-0 bg-[#191c24]/95 backdrop-blur-md z-10">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#272a32] border border-[#3d494c]/40 flex items-center justify-center shrink-0">
-                {getInteractionIcon()}
-              </div>
+              <TransactionTypeIcon type={tx.type} status={tx.status} size="lg" />
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-bold text-base text-[#e1e2ec]">{tx.title}</h3>
@@ -148,37 +148,23 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                     </h4>
                     <p className="text-xs opacity-90 mt-0.5 text-[#bcc9cd]">
                       {tx.status === 'confirmed' && `Inclusión verificada en bloque #${tx.blockNumber.toLocaleString()}`}
-                      {tx.status === 'pending' && `Bloque en validación de consenso. Progreso: ${progressPercent}%`}
+                      {tx.status === 'pending' && `Bloque en validación de consenso descentralizado. Progreso: ${progressPercent}%`}
                       {tx.status === 'failed' && 'Firma o llamada revertida para prevenir pérdida de fondos'}
                     </p>
                   </div>
                 </div>
-
-                {tx.status === 'pending' && onSpeedUp && (
-                  <button
-                    onClick={() => onSpeedUp(tx.id)}
-                    className="px-2.5 py-1 rounded-xl bg-[#4cd7f6] text-[#003640] font-bold text-xs flex items-center gap-1 hover:brightness-110 active:scale-95 transition-all shadow-md shrink-0 cursor-pointer"
-                  >
-                    <Zap className="w-3.5 h-3.5 fill-current" />
-                    Acelerar
-                  </button>
-                )}
               </div>
 
-              {/* Progress bar if pending */}
+              {/* Enhanced Animated Progress Bar for Pending Transactions */}
               {tx.status === 'pending' && (
-                <div className="mt-3">
-                  <div className="w-full bg-[#191c24] rounded-full h-2 overflow-hidden">
-                    <div
-                      className="bg-gradient-to-r from-[#00687a] to-[#4cd7f6] h-full transition-all duration-500 rounded-full"
-                      style={{ width: `${progressPercent}%` }}
-                    />
-                  </div>
-                  <div className="flex justify-between items-center text-[10px] text-[#bcc9cd] mt-1.5 font-code-sm">
-                    <span>Estado: Difusión en validadores</span>
-                    <span>{tx.confirmations} / {tx.requiredConfirmations} Bloques</span>
-                  </div>
-                </div>
+                <PendingTransactionProgress
+                  txId={tx.id}
+                  confirmations={tx.confirmations}
+                  requiredConfirmations={tx.requiredConfirmations}
+                  blockNumber={tx.blockNumber}
+                  type={tx.type}
+                  onSpeedUp={onSpeedUp}
+                />
               )}
             </div>
 
@@ -318,17 +304,59 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                 </div>
               </div>
 
-              {tx.savedWithEcoGasUsd && (
-                <div className="p-2.5 rounded-xl bg-[#00a572]/10 border border-[#00a572]/30 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2 text-[#4edea3]">
-                    <Fuel className="w-4 h-4" />
-                    <span className="font-semibold">Ahorro Eco-Gas Aplicado</span>
-                  </div>
-                  <span className="font-code-sm font-bold text-[#4edea3]">
-                    +{tx.savedWithEcoGasUsd} USD
+              {/* Flashbots Gas Optimization & Savings Audit */}
+              <div className="p-3.5 rounded-xl bg-gradient-to-r from-[#16181f] via-[#1a1e27] to-[#16181f] border border-[#4edea3]/30 space-y-2.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-[#e1e2ec] flex items-center gap-1.5">
+                    <Fuel className="w-3.5 h-3.5 text-[#4edea3]" />
+                    Auditoría de Gas Flashbots
                   </span>
+                  {tx.gasSavingsPercent && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#00a572]/20 text-[#4edea3] border border-[#00a572]/40">
+                      -{tx.gasSavingsPercent}% Reducción
+                    </span>
+                  )}
                 </div>
-              )}
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs font-code-sm">
+                  <div className="p-2 rounded-lg bg-[#13151b] border border-[#3d494c]/30">
+                    <span className="text-[10px] text-[#869397] block">Gas Real Abonado</span>
+                    <span className="font-bold text-[#4cd7f6] mt-0.5 block">
+                      {tx.gasFeeUsd}
+                    </span>
+                    <span className="text-[10px] text-[#869397]">
+                      {tx.gasPriceGwei} Gwei
+                    </span>
+                  </div>
+
+                  <div className="p-2 rounded-lg bg-[#13151b] border border-[#3d494c]/30">
+                    <span className="text-[10px] text-[#869397] block">Flashbots Óptimo</span>
+                    <span className="font-bold text-[#4edea3] mt-0.5 block">
+                      {tx.optimalGasFeeUsd || tx.gasFeeUsd}
+                    </span>
+                    <span className="text-[10px] text-[#869397]">
+                      {tx.optimalGasPriceGwei ?? tx.gasPriceGwei} Gwei
+                    </span>
+                  </div>
+
+                  <div className="p-2 rounded-lg bg-[#13151b] border border-[#00a572]/40 col-span-2 sm:col-span-1">
+                    <span className="text-[10px] text-[#4edea3] block font-bold">Ahorro con Ajuste</span>
+                    <span className="font-bold text-[#4edea3] mt-0.5 block">
+                      +{tx.savedWithEcoGasUsd || '$0.00'} USD
+                    </span>
+                    <span className="text-[10px] text-[#869397]">
+                      vs Mempool pública
+                    </span>
+                  </div>
+                </div>
+
+                {tx.unoptimizedGasUsd && (
+                  <div className="text-[11px] text-[#869397] flex items-center justify-between pt-1 border-t border-[#3d494c]/20">
+                    <span>Sin optimización (mempool pública):</span>
+                    <span className="line-through text-[#ffb4ab] font-code-sm">{tx.unoptimizedGasUsd} USD</span>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* MEV & Privacy Shield */}

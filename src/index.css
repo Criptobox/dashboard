@@ -99,3 +99,33 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Shimmer beam and pulse animations for transaction progress */
+@keyframes shimmer-sweep {
+  0% {
+    transform: translateX(-150%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+.animate-shimmer-sweep {
+  animation: shimmer-sweep 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes radar-pulse {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.08);
+  }
+}
+
+.animate-radar-pulse {
+  animation: radar-pulse 2.2s infinite ease-in-out;
+}
+

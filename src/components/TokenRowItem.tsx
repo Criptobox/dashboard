@@ -2,18 +2,21 @@ import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { TokenItem } from '../types';
 import { TokenLogo } from './TokenLogo';
-import { ArrowUpRight, ArrowDownRight, Zap } from 'lucide-react';
+import { AiRiskBadge } from './AiRiskBadge';
+import { ArrowUpRight, ArrowDownRight, Zap, Scale } from 'lucide-react';
 
 interface TokenRowItemProps {
   token: TokenItem;
   hideBalance: boolean;
   onOpenActionModal: (type: 'send' | 'receive' | 'swap' | 'bridge', token?: TokenItem) => void;
+  onCompareToken?: (token: TokenItem) => void;
 }
 
 export const TokenRowItem: React.FC<TokenRowItemProps> = ({
   token,
   hideBalance,
   onOpenActionModal,
+  onCompareToken,
 }) => {
   const [flashType, setFlashType] = useState<
     'price-up' | 'price-down' | 'balance-up' | 'balance-down' | null
@@ -114,6 +117,22 @@ export const TokenRowItem: React.FC<TokenRowItemProps> = ({
             <span className="px-1.5 py-0.5 rounded bg-[#32353d] text-[#bcc9cd] font-code-sm text-[10px]">
               {token.chainLabel}
             </span>
+            <AiRiskBadge symbol={token.symbol} tokenName={token.name} size="sm" />
+
+            {onCompareToken && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCompareToken(token);
+                }}
+                title={`Comparar ${token.symbol} lado a lado`}
+                className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-code-sm font-semibold bg-[#272a32] hover:bg-[#32353d] text-[#869397] hover:text-[#4cd7f6] border border-[#3d494c]/40 transition-all cursor-pointer"
+              >
+                <Scale className="w-2.5 h-2.5" />
+                <span>Comparar</span>
+              </button>
+            )}
 
             {/* Flash Badge Indicator for changes */}
             <AnimatePresence>
