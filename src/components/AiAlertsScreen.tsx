@@ -199,7 +199,7 @@ export const AiAlertsScreen: React.FC<AiAlertsScreenProps> = ({
       />
 
       {/* Screen Header Banner */}
-      <div className="px-4">
+      <div className="px-4 lg:px-6">
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#191b23] via-[#1d1f27] to-[#10131a] border border-[#3d494c]/40 p-4 shadow-xl">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -248,7 +248,7 @@ export const AiAlertsScreen: React.FC<AiAlertsScreenProps> = ({
       </div>
 
       {/* INTELLIGENCE CENTER SUB-TABS */}
-      <div className="px-4">
+      <div className="px-4 lg:px-6">
         <div className="p-1.5 rounded-2xl bg-[#14161f] border border-[#272a32] flex items-center gap-1.5 shadow-inner">
           <button
             onClick={() => setIntelligenceTab('scanner')}
@@ -297,7 +297,7 @@ export const AiAlertsScreen: React.FC<AiAlertsScreenProps> = ({
 
       {/* RUG-PULL SCANNER TAB */}
       {intelligenceTab === 'scanner' && (
-        <div className="px-4">
+        <div className="px-4 lg:px-6">
           <ContractRugScannerWidget
             onShowToast={onShowToast}
             onOpenSwap={onTriggerSwap}
@@ -307,7 +307,7 @@ export const AiAlertsScreen: React.FC<AiAlertsScreenProps> = ({
 
       {/* SECTION 1: AI AUTOMATIONS & OP PORTFOLIO */}
       {intelligenceTab === 'actions' && (
-      <div className="px-4 flex flex-col gap-3">
+      <div className="px-4 lg:px-6 flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h2 className="font-headline-sm text-base text-[#e1e2ec] font-bold tracking-tight">
             Acciones Inteligentes Sugeridas
@@ -548,7 +548,7 @@ export const AiAlertsScreen: React.FC<AiAlertsScreenProps> = ({
 
       {/* SECCIÓN 2: CENTRO DE ALERTAS Y CENTINELAS PUSH */}
       {intelligenceTab === 'sentinels' && (
-      <div className="px-4 flex flex-col gap-4">
+      <div className="px-4 lg:px-6 flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">

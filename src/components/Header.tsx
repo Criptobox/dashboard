@@ -61,7 +61,7 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <>
       <header className="fixed top-0 inset-x-0 z-40 bg-[#10131a]/90 backdrop-blur-xl border-b border-[#272a32]/60 pt-safe transition-all">
-        <div className="max-w-md mx-auto h-16 px-3 sm:px-4 flex items-center justify-between gap-1.5 sm:gap-2">
+        <div className="max-w-md md:max-w-2xl lg:max-w-5xl mx-auto h-16 px-3 sm:px-4 lg:px-6 flex items-center justify-between gap-1.5 sm:gap-2">
           {/* Logo & Brand Title */}
           <div
             className="flex items-center gap-2 min-w-0 cursor-pointer shrink-0"
@@ -72,7 +72,7 @@ export const Header: React.FC<HeaderProps> = ({
               alt="OmniVault Logo"
               className="h-8 w-8 object-contain drop-shadow-[0_0_8px_rgba(76,215,246,0.4)]"
             />
-            <span className="hidden xs:inline font-headline-sm text-base sm:text-lg font-bold text-[#e1e2ec] tracking-tight truncate">
+            <span className="hidden sm:inline font-headline-sm text-base sm:text-lg font-bold text-[#e1e2ec] tracking-tight truncate">
               OmniVault
             </span>
           </div>
@@ -96,7 +96,7 @@ export const Header: React.FC<HeaderProps> = ({
               <Fuel
                 className={`w-3.5 h-3.5 ${gasSaverMode ? 'text-[#4edea3]' : 'text-[#869397]'}`}
               />
-              <span className="font-code-sm text-[11px] tracking-tight whitespace-nowrap">
+              <span className="hidden xs:inline font-code-sm text-[11px] tracking-tight whitespace-nowrap">
                 {gasSaverMode ? 'Eco Gas' : 'Gas'}
               </span>
               <span
@@ -124,11 +124,11 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 id="connect-wallet-header-btn"
                 onClick={() => setShowConnectModal(true)}
-                className="h-9 px-3 rounded-full bg-gradient-to-r from-[#4cd7f6] via-[#22d3ee] to-[#4edea3] hover:brightness-110 text-[#003640] font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-[#4cd7f6]/25 transition-all cursor-pointer select-none shrink-0 active:scale-95"
+                className="h-9 w-9 sm:w-auto justify-center px-0 sm:px-3 rounded-full bg-gradient-to-r from-[#4cd7f6] via-[#22d3ee] to-[#4edea3] hover:brightness-110 text-[#003640] font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-[#4cd7f6]/25 transition-all cursor-pointer select-none shrink-0 active:scale-95"
                 title="Conectar Wallet Web3 (MetaMask, WalletConnect, Coinbase)"
               >
                 <Wallet className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span className="font-bold tracking-tight">Conectar Wallet</span>
+                <span className="hidden sm:inline font-bold tracking-tight">Conectar Wallet</span>
               </button>
             ) : (
               <button
@@ -149,7 +149,7 @@ export const Header: React.FC<HeaderProps> = ({
                     className="w-5 h-5 rounded-full object-cover border border-[#4cd7f6]/40"
                   />
                 )}
-                <span className="font-code-sm text-[11px] text-[#4cd7f6] font-semibold tracking-tight">
+                <span className="hidden sm:inline font-code-sm text-[11px] text-[#4cd7f6] font-semibold tracking-tight">
                   {shortenAddress(walletState.address)}
                 </span>
                 <span className="w-1.5 h-1.5 rounded-full bg-[#4edea3] animate-pulse" />

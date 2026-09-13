@@ -27,6 +27,7 @@ import {
 } from './data/mockData';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
+import { DesktopNav } from './components/DesktopNav';
 import { DashboardScreen } from './components/DashboardScreen';
 import { RescueScreen } from './components/RescueScreen';
 import { NftsScreen } from './components/NftsScreen';
@@ -429,8 +430,8 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#0b0e15] text-[#e1e2ec] flex flex-col items-center justify-start antialiased selection:bg-[#4cd7f6] selection:text-[#003640]">
-      {/* Centered Mobile Container framing matching the provided mockups */}
-      <div className="w-full max-w-md min-h-screen bg-[#10131a] relative flex flex-col pt-16 pb-24 shadow-2xl border-x border-[#272a32]/40">
+      {/* Centered app container: fixed mobile-width card that widens into a full desktop dashboard at lg+ */}
+      <div className="w-full max-w-md md:max-w-2xl lg:max-w-5xl min-h-screen bg-[#10131a] relative flex flex-col pt-16 pb-24 lg:pt-28 lg:pb-10 shadow-2xl lg:shadow-none border-x border-[#272a32]/40 lg:border-x-0">
         {/* Header */}
         <Header
           currentChain={currentChain}
@@ -442,6 +443,14 @@ export default function App() {
           onConnectWallet={handleConnectWallet}
           onDisconnectWallet={handleDisconnectWallet}
           onOpenSettings={() => setActiveTab('settings')}
+        />
+
+        {/* Desktop Top Tab Navigation (replaces the bottom nav at lg+) */}
+        <DesktopNav
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          unclaimedCount={rescueContracts.filter((c) => !c.rescued).length}
+          readyAirdropsCount={airdrops.filter((a) => a.status === 'ready').length}
         />
 
         {/* Main View Area */}

@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @theme {
+  --breakpoint-xs: 22.5rem;
   --color-surface: #10131a;
   --color-surface-dim: #10131a;
   --color-surface-bright: #363941;

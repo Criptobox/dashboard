@@ -69,7 +69,7 @@ export const AirdropsScreen: React.FC<AirdropsScreenProps> = ({
   };
 
   return (
-    <div className="flex flex-col w-full px-4 space-y-4 pb-12 animate-in fade-in duration-200">
+    <div className="flex flex-col w-full px-4 lg:px-6 space-y-4 pb-12 animate-in fade-in duration-200">
       {/* Header Banner: Airdrop Radar & Total Value */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1d1f27] via-[#272a32] to-[#191b23] border border-[#3d494c]/50 p-5 shadow-xl">
         {/* Glow blooms */}

@@ -306,7 +306,7 @@ export const NftsScreen: React.FC<NftsScreenProps> = ({
   return (
     <div className="flex flex-col w-full pb-14 animate-in fade-in duration-200">
       {/* Metrics & Portfolio Pulse Overview */}
-      <div className="px-4 pt-1 pb-4">
+      <div className="px-4 lg:px-6 pt-1 pb-4">
         <div className="relative overflow-hidden rounded-2xl bg-[#1d1f27] border border-[#3d494c]/40 p-5 shadow-lg">
           {/* Ambient Glow Blooms */}
           <div className="pointer-events-none absolute -top-10 -right-10 w-40 h-40 rounded-full bg-[#4cd7f6]/15 blur-2xl" />
@@ -356,12 +356,12 @@ export const NftsScreen: React.FC<NftsScreenProps> = ({
       </div>
 
       {/* NFT Portfolio Value Distribution Bar Chart (Recharts) */}
-      <div className="px-4 pb-4">
+      <div className="px-4 lg:px-6 pb-4">
         <NftValueChart nfts={nfts} onShowToast={onShowToast} />
       </div>
 
       {/* Primary Action: Set Price / Bid Alert */}
-      <div className="px-4 pb-4">
+      <div className="px-4 lg:px-6 pb-4">
         <button
           onClick={() => handleOpenAlertModal()}
           className="w-full h-12 rounded-xl bg-[#4cd7f6] hover:bg-[#06b6d4] text-[#003640] font-sans font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#4cd7f6]/15 transition-all active:scale-[0.98] cursor-pointer"
@@ -403,7 +403,7 @@ export const NftsScreen: React.FC<NftsScreenProps> = ({
 
       {/* Marketplace Horizontal Scroller / Filter Tabs */}
       <div className="w-full pb-3">
-        <div className="px-4 flex items-center justify-between mb-2">
+        <div className="px-4 lg:px-6 flex items-center justify-between mb-2">
           <span className="text-xs text-[#bcc9cd] uppercase tracking-wider font-code-sm font-semibold">
             Marketplace Agregado
           </span>
@@ -440,7 +440,7 @@ export const NftsScreen: React.FC<NftsScreenProps> = ({
       </div>
 
       {/* NFT Gallery Feed */}
-      <div className="px-4 flex flex-col gap-5 pt-1">
+      <div className="px-4 lg:px-6 pt-1">
         {/* Empty State when filters yield 0 matches */}
         {displayedNfts.length === 0 && (
           <div className="p-8 rounded-2xl bg-[#14161f] border border-[#272a32] flex flex-col items-center justify-center text-center gap-3 my-4">
@@ -465,6 +465,7 @@ export const NftsScreen: React.FC<NftsScreenProps> = ({
           </div>
         )}
 
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {displayedNfts.map((nft) => (
           <div
             key={nft.id}
@@ -666,6 +667,7 @@ export const NftsScreen: React.FC<NftsScreenProps> = ({
             </div>
           </div>
         ))}
+        </div>
       </div>
 
       {/* Price Alert Configuration Modal */}

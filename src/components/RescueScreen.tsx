@@ -49,7 +49,7 @@ export const RescueScreen: React.FC<RescueScreenProps> = ({
   };
 
   return (
-    <div className="flex flex-col w-full px-4 space-y-4 pb-14 animate-in fade-in duration-200">
+    <div className="flex flex-col w-full px-4 lg:px-6 space-y-4 pb-14 animate-in fade-in duration-200">
       {/* Scanner Diagnostic Telemetry */}
       <section className="w-full bg-[#191b23] border border-[#272a32] rounded-2xl p-4 relative overflow-hidden shadow-sm">
         <div className="flex items-center justify-between gap-2">
@@ -182,7 +182,7 @@ export const RescueScreen: React.FC<RescueScreenProps> = ({
       </section>
 
       {/* Detailed Contract Cards List */}
-      <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {contracts.map((item) => (
           <article
             key={item.id}

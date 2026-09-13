@@ -192,7 +192,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   };
 
   return (
-    <div className="flex flex-col w-full px-4 space-y-4 pb-16 animate-in fade-in duration-200">
+    <div className="flex flex-col w-full px-4 lg:px-6 space-y-4 pb-16 animate-in fade-in duration-200">
       {/* Top Header Breadcrumb & Screen Title */}
       <div className="flex items-center justify-between pt-1">
         <div className="flex items-center gap-2">

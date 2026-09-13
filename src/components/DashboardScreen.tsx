@@ -140,7 +140,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   };
 
   return (
-    <div className="relative flex flex-col w-full px-4 space-y-4 pb-12 animate-in fade-in duration-200">
+    <div className="relative flex flex-col w-full px-4 lg:px-6 space-y-4 pb-12 animate-in fade-in duration-200">
       {/* Dynamic Particle Background reacting to Market Pulse & Price Updates */}
       <MarketPulseBackground
         pulseTrigger={pulseCount}
@@ -289,6 +289,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         </button>
       </div>
 
+      {/* Callout Banners: AI Risk Overview, Rescue Alert & Airdrop Radar */}
+      <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-3 lg:items-stretch">
       {/* Global Portfolio AI Risk Overview Banner */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#191b23] via-[#1c1f28] to-[#242731] p-4 border border-[#3d494c]/50 shadow-md">
         <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -401,6 +403,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </button>
         </div>
       </div>
+      </div>
 
       {/* Portfolio Performance Line Chart (Recharts) */}
       <PortfolioPerformanceChart
@@ -410,23 +413,24 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         onShowToast={onShowToast}
       />
 
-      {/* Network Asset Allocation Circular Chart (Pie Chart) */}
-      <NetworkAllocationPieChart
-        tokens={tokens}
-        currentChain={currentChain}
-        onSelectChain={onSelectChain}
-        hideBalance={hideBalance}
-        onShowToast={onShowToast}
-      />
+      {/* Network Asset Allocation Chart & Real-time Gas Heatmap, side by side on desktop */}
+      <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-4 lg:items-start">
+        <NetworkAllocationPieChart
+          tokens={tokens}
+          currentChain={currentChain}
+          onSelectChain={onSelectChain}
+          hideBalance={hideBalance}
+          onShowToast={onShowToast}
+        />
 
-      {/* Real-time Network Gas Heatmap Widget */}
-      <NetworkHeatmapWidget
-        currentChain={currentChain}
-        onSelectChain={onSelectChain}
-        onOpenActionModal={onOpenActionModal}
-        gasSaverMode={gasSaverMode}
-        onShowToast={onShowToast}
-      />
+        <NetworkHeatmapWidget
+          currentChain={currentChain}
+          onSelectChain={onSelectChain}
+          onOpenActionModal={onOpenActionModal}
+          gasSaverMode={gasSaverMode}
+          onShowToast={onShowToast}
+        />
+      </div>
 
       {/* Horizontal Multi-Chain Carousel */}
       <div className="space-y-2 pt-1">
