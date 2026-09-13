@@ -273,7 +273,7 @@ export const NftValueChart: React.FC<NftValueChartProps> = ({ nfts, onShowToast 
             margin={{ top: 12, right: 8, left: -14, bottom: 2 }}
             onMouseMove={(state) => {
               if (state && state.activeTooltipIndex !== undefined) {
-                setActiveBarIndex(state.activeTooltipIndex);
+                setActiveBarIndex(Number(state.activeTooltipIndex));
               }
             }}
             onMouseLeave={() => setActiveBarIndex(null)}

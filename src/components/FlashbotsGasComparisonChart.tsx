@@ -474,12 +474,13 @@ export const FlashbotsGasComparisonChart: React.FC<FlashbotsGasComparisonChartPr
                     fill="#4cd7f6"
                     radius={[4, 4, 0, 0]}
                     onClick={(data) => {
-                      if (onSelectTransaction && data?.originalTx) {
-                        onSelectTransaction(data.originalTx);
+                      const payload: ProcessedTxGasData | undefined = data?.payload;
+                      if (onSelectTransaction && payload?.originalTx) {
+                        onSelectTransaction(payload.originalTx);
                         if (onShowToast) {
                           onShowToast(
                             'Detalles de Transacción',
-                            `Inspeccionando gas de ${data.fullTitle}`
+                            `Inspeccionando gas de ${payload.fullTitle}`
                           );
                         }
                       }
@@ -505,8 +506,9 @@ export const FlashbotsGasComparisonChart: React.FC<FlashbotsGasComparisonChartPr
                     fill="#4edea3"
                     radius={[4, 4, 0, 0]}
                     onClick={(data) => {
-                      if (onSelectTransaction && data?.originalTx) {
-                        onSelectTransaction(data.originalTx);
+                      const payload: ProcessedTxGasData | undefined = data?.payload;
+                      if (onSelectTransaction && payload?.originalTx) {
+                        onSelectTransaction(payload.originalTx);
                       }
                     }}
                     cursor="pointer"

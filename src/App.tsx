@@ -116,9 +116,9 @@ export default function App() {
   };
 
   // Claim Airdrop Handler
-  const handleClaimAirdrop = (airdropId: string) => {
-    const targetAirdrop = airdrops.find((a) => a.id === airdropId);
-    if (!targetAirdrop || targetAirdrop.status !== 'ready') return;
+  const handleClaimAirdrop = (targetAirdrop: AirdropItem) => {
+    if (targetAirdrop.status !== 'ready') return;
+    const airdropId = targetAirdrop.id;
 
     // Simulate claiming
     setAirdrops((prev) =>
@@ -129,14 +129,14 @@ export default function App() {
 
     // Credit value to tokens list
     setTokens((prev) => {
-      const existing = prev.find((t) => t.symbol.toUpperCase() === targetAirdrop.tokenSymbol.toUpperCase());
+      const existing = prev.find((t) => t.symbol.toUpperCase() === targetAirdrop.symbol.toUpperCase());
       if (existing) {
         return prev.map((t) =>
           t.id === existing.id
             ? {
                 ...t,
-                balance: t.balance + targetAirdrop.allocatedAmount,
-                valueUsd: t.valueUsd + targetAirdrop.estimatedValueUsd,
+                balance: t.balance + targetAirdrop.allocatedTokens,
+                valueUsd: t.valueUsd + targetAirdrop.estimatedUsd,
               }
             : t
         );
@@ -145,13 +145,13 @@ export default function App() {
         ...prev,
         {
           id: targetAirdrop.id,
-          symbol: targetAirdrop.tokenSymbol,
+          symbol: targetAirdrop.symbol,
           name: targetAirdrop.name,
-          chain: targetAirdrop.chain.toLowerCase(),
-          chainLabel: targetAirdrop.chain,
-          balance: targetAirdrop.allocatedAmount,
-          priceUsd: targetAirdrop.estimatedValueUsd / targetAirdrop.allocatedAmount,
-          valueUsd: targetAirdrop.estimatedValueUsd,
+          chain: targetAirdrop.network.toLowerCase(),
+          chainLabel: targetAirdrop.network,
+          balance: targetAirdrop.allocatedTokens,
+          priceUsd: targetAirdrop.estimatedUsd / targetAirdrop.allocatedTokens,
+          valueUsd: targetAirdrop.estimatedUsd,
           change24h: 4.8,
           iconType: 'eth',
         },
@@ -196,8 +196,29 @@ export default function App() {
 
     const feeSaved = gasSaverMode ? "$0.42 USD (Ahorro Gas -55%)" : "$1.20 USD";
     showToast(
-      `¡${targetAirdrop.allocatedAmount} ${targetAirdrop.tokenSymbol} Reclamados!`,
-      `Valor de $${targetAirdrop.estimatedValueUsd.toLocaleString()} USD depositado en tu bóveda. Tarifa: ${feeSaved}`
+      `¡${targetAirdrop.allocatedTokens.toLocaleString()} ${targetAirdrop.symbol} Reclamados!`,
+      `Valor de $${targetAirdrop.estimatedUsd.toLocaleString()} USD depositado en tu bóveda. Tarifa: ${feeSaved}`
+    );
+  };
+
+  // Mark an airdrop eligibility criterion as completed
+  const handleCompleteCriterion = (airdropId: string, criterionId: string) => {
+    setAirdrops((prev) =>
+      prev.map((a) => {
+        if (a.id !== airdropId) return a;
+        const criteria = a.criteria.map((c) =>
+          c.id === criterionId ? { ...c, completed: true } : c
+        );
+        const completedCount = criteria.filter((c) => c.completed).length;
+        const progressPercent = Math.round((completedCount / criteria.length) * 100);
+        const allCompleted = completedCount === criteria.length;
+        return {
+          ...a,
+          criteria,
+          progressPercent,
+          status: allCompleted && a.status === 'near' ? 'ready' : a.status,
+        };
+      })
     );
   };
 
@@ -456,8 +477,8 @@ export default function App() {
             <AirdropsScreen
               airdrops={airdrops}
               gasSaverMode={gasSaverMode}
-              onToggleGasSaverMode={handleToggleGasSaverMode}
               onClaimAirdrop={handleClaimAirdrop}
+              onCompleteCriterion={handleCompleteCriterion}
               onShowToast={showToast}
             />
           )}

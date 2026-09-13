@@ -178,7 +178,7 @@ export const MarketPulseBackground: React.FC<MarketPulseBackgroundProps> = ({
     let lastTime = performance.now();
 
     const render = (now: number) => {
-      const dt = Math.min((now - lastTime) / 1000, 0.1);
+      const dt = Math.max(0, Math.min((now - lastTime) / 1000, 0.1));
       lastTime = now;
 
       const { width, height } = dimensionsRef.current;
@@ -200,7 +200,7 @@ export const MarketPulseBackground: React.FC<MarketPulseBackgroundProps> = ({
           // Outer glow ring
           ctx.save();
           ctx.beginPath();
-          ctx.arc(wave.x, wave.y, wave.radius, 0, Math.PI * 2);
+          ctx.arc(wave.x, wave.y, Math.max(0, wave.radius), 0, Math.PI * 2);
           ctx.strokeStyle = `rgba(${wave.color}, ${wave.alpha})`;
           ctx.lineWidth = 2.5;
           ctx.shadowColor = `rgba(${wave.color}, 0.8)`;

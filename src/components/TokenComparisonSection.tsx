@@ -218,7 +218,7 @@ export const TokenComparisonSection: React.FC<TokenComparisonSectionProps> = ({
           <div className="p-3 rounded-xl bg-[#1d1f27] border-2 border-[#4cd7f6]/40 hover:border-[#4cd7f6]/70 transition-all shadow-md">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <TokenLogo iconType={tokenA.iconType} symbol={tokenA.symbol} size="md" />
+                <TokenLogo symbol={tokenA.symbol} size="md" />
                 <div>
                   <div className="flex items-center gap-1.5">
                     <span className="font-bold text-sm text-[#e1e2ec]">{tokenA.name}</span>
@@ -297,7 +297,7 @@ export const TokenComparisonSection: React.FC<TokenComparisonSectionProps> = ({
           <div className="p-3 rounded-xl bg-[#1d1f27] border-2 border-[#d0bcff]/40 hover:border-[#d0bcff]/70 transition-all shadow-md">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <TokenLogo iconType={tokenB.iconType} symbol={tokenB.symbol} size="md" />
+                <TokenLogo symbol={tokenB.symbol} size="md" />
                 <div>
                   <div className="flex items-center gap-1.5">
                     <span className="font-bold text-sm text-[#e1e2ec]">{tokenB.name}</span>
