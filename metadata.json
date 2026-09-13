@@ -1,0 +1,6 @@
+{
+  "name": "OmniVault",
+  "description": "Bóveda Web3 de autocustodia y rescate de contratos inteligentes con panel de cartera, NFTs y centro de inteligencia.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
