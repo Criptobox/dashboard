@@ -123,10 +123,23 @@ export const PortfolioImpactCalculator: React.FC<PortfolioImpactCalculatorProps>
     return isNaN(parsed) ? 0 : Math.max(0, Math.min(parsed, fromToken?.balance || 0));
   }, [customAmountStr, fromToken]);
 
-  // Execute simulation
-  const simulation: SwapSimulationResult = useMemo(() => {
+  // Execute simulation (skipped when there's nothing to simulate a swap between)
+  const simulation: SwapSimulationResult | null = useMemo(() => {
+    if (!fromToken || !toToken) return null;
     return simulateSwapImpact(availableTokens, fromTokenId, toTokenId, numericAmountFrom);
-  }, [availableTokens, fromTokenId, toTokenId, numericAmountFrom]);
+  }, [availableTokens, fromToken, toToken, fromTokenId, toTokenId, numericAmountFrom]);
+
+  if (!fromToken || !toToken || !simulation) {
+    return (
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#191b23] via-[#1b1e26] to-[#21242d] border border-[#3d494c]/40 shadow-xl p-5 text-center">
+        <BrainCircuit className="w-8 h-8 text-[#4cd7f6] mx-auto mb-2 opacity-60" />
+        <p className="text-sm font-semibold text-[#e1e2ec]">Sin activos para simular</p>
+        <p className="text-xs text-[#869397] mt-1">
+          Tu wallet conectada aún no tiene saldo disponible para proyectar un swap.
+        </p>
+      </div>
+    );
+  }
 
   // Overall risk metrics
   const { currentMetrics, simulatedMetrics, riskScoreDelta, riskScoreDeltaPercent } = simulation;

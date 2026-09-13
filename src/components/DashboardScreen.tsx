@@ -50,6 +50,8 @@ interface DashboardScreenProps {
   onSimulateMarketPulse?: () => void;
   transactions?: TransactionRecord[];
   onUpdateTransactions?: (updater: (prev: TransactionRecord[]) => TransactionRecord[]) => void;
+  isRealPortfolio?: boolean;
+  isLoadingRealPortfolio?: boolean;
 }
 
 export const DashboardScreen: React.FC<DashboardScreenProps> = ({
@@ -65,6 +67,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   onSimulateMarketPulse,
   transactions = INITIAL_TRANSACTIONS,
   onUpdateTransactions,
+  isRealPortfolio = false,
+  isLoadingRealPortfolio = false,
 }) => {
   const [hideBalance, setHideBalance] = useState(false);
   const [activeAssetTab, setActiveAssetTab] = useState<'tokens' | 'impact' | 'compare' | 'defi' | 'history'>('tokens');
@@ -166,6 +170,28 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             >
               {hideBalance ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
+            {isLoadingRealPortfolio ? (
+              <span
+                className="px-2 py-0.5 rounded-full bg-[#4cd7f6]/15 text-[#4cd7f6] border border-[#4cd7f6]/30 text-[9px] font-code-sm font-bold uppercase tracking-wider animate-pulse"
+                title="Consultando tu saldo real on-chain"
+              >
+                Leyendo Wallet...
+              </span>
+            ) : isRealPortfolio ? (
+              <span
+                className="px-2 py-0.5 rounded-full bg-[#4edea3]/15 text-[#4edea3] border border-[#4edea3]/30 text-[9px] font-code-sm font-bold uppercase tracking-wider"
+                title="Balance leído directamente de tu wallet conectada"
+              >
+                Saldo Real
+              </span>
+            ) : (
+              <span
+                className="px-2 py-0.5 rounded-full bg-[#d0bcff]/15 text-[#d0bcff] border border-[#d0bcff]/30 text-[9px] font-code-sm font-bold uppercase tracking-wider"
+                title="Portafolio de demostración — conecta tu wallet para ver tu saldo real"
+              >
+                Demo
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2">

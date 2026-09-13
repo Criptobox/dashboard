@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ScreenTab,
   TokenItem,
@@ -35,6 +35,8 @@ import { AiAlertsScreen } from './components/AiAlertsScreen';
 import { AirdropsScreen } from './components/AirdropsScreen';
 import { SettingsScreen } from './components/SettingsScreen';
 import { ActionModals } from './components/ActionModals';
+import { useRealWalletPortfolio } from './hooks/useRealWalletPortfolio';
+import { getInjectedProvider } from './utils/web3';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ScreenTab>('dashboard');
@@ -72,6 +74,41 @@ export default function App() {
     });
   };
 
+  // Real on-chain balance for the connected wallet (native coin + USDC on whatever
+  // chain the wallet is pointed at), fetched directly through the wallet's own
+  // provider — replaces the demo portfolio the moment a real wallet connects.
+  const realPortfolio = useRealWalletPortfolio(walletState);
+
+  useEffect(() => {
+    if (walletState.isConnected && realPortfolio.tokens) {
+      setTokens(realPortfolio.tokens);
+    } else if (!walletState.isConnected) {
+      setTokens(INITIAL_TOKENS);
+    }
+  }, [walletState.isConnected, realPortfolio.tokens]);
+
+  // Keep the connected address in sync if the user switches or locks accounts
+  // directly inside their wallet extension (rather than through this app's UI).
+  useEffect(() => {
+    if (!walletState.isConnected || walletState.provider === 'walletconnect') return;
+    const injected = getInjectedProvider();
+    if (!injected || !injected.on || !injected.removeListener) return;
+
+    const handleAccountsChanged = (...args: unknown[]) => {
+      const accounts = args[0] as string[];
+      if (!accounts || accounts.length === 0) {
+        handleDisconnectWallet();
+      } else {
+        setWalletState((prev) => (prev.isConnected ? { ...prev, address: accounts[0] } : prev));
+      }
+    };
+
+    injected.on('accountsChanged', handleAccountsChanged);
+    return () => {
+      injected.removeListener?.('accountsChanged', handleAccountsChanged);
+    };
+  }, [walletState.isConnected, walletState.provider]);
+
   // Global Gas Saver Mode State
   const [gasSaverMode, setGasSaverMode] = useState<boolean>(true);
 
@@ -98,6 +135,23 @@ export default function App() {
       setToast((prev) => (prev?.title === title ? null : prev));
     }, 3800);
   };
+
+  // Surface real-portfolio fetch outcomes so the user always knows whether
+  // they're looking at their actual on-chain balance or why it isn't available.
+  useEffect(() => {
+    if (!walletState.isConnected) return;
+    if (realPortfolio.error === 'NO_PROVIDER') {
+      showToast('Wallet No Detectada', 'No se encontró una extensión Web3 inyectada para leer tu saldo real.');
+    } else if (realPortfolio.error === 'UNSUPPORTED_CHAIN') {
+      showToast('Red No Soportada', 'Cambia a Ethereum, Polygon, Arbitrum, Base, Optimism o BNB Chain para ver tu saldo real.');
+    } else if (realPortfolio.error) {
+      showToast('No se Pudo Leer tu Saldo', 'Ocurrió un error consultando la red. Intenta de nuevo desde tu wallet.');
+    } else if (realPortfolio.tokens && !realPortfolio.isLoading) {
+      const chainLabel = realPortfolio.tokens[0]?.chainLabel;
+      showToast('Saldo Real Cargado', `Mostrando tu balance on-chain actual en ${chainLabel}.`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [realPortfolio.error, realPortfolio.tokens]);
 
   // Toggle Global Gas Saver Mode
   const handleToggleGasSaverMode = () => {
@@ -469,6 +523,8 @@ export default function App() {
               onSimulateMarketPulse={handleSimulateMarketPulse}
               transactions={transactions}
               onUpdateTransactions={setTransactions}
+              isRealPortfolio={walletState.isConnected && !!realPortfolio.tokens}
+              isLoadingRealPortfolio={walletState.isConnected && realPortfolio.isLoading}
             />
           )}
 

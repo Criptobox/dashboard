@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { WalletProvider, WalletState } from '../types';
+import { getInjectedProvider, requestRealAccount } from '../utils/web3';
 import {
   X,
   Check,
@@ -83,8 +84,8 @@ const WALLET_OPTIONS: {
   badge: string;
   badgeColor: string;
   description: string;
-  address: string;
-  installed: boolean;
+  /** Only used by WalletConnect's explicitly-simulated demo flow below. */
+  address?: string;
   popular?: boolean;
 }[] = [
   {
@@ -94,8 +95,6 @@ const WALLET_OPTIONS: {
     badge: 'Detectada',
     badgeColor: '#e2761b',
     description: 'Bóveda Web3 más utilizada. Conexión inyectada EIP-1193 directa.',
-    address: '0x7F29b8A649c096EdfC7802Db349F899e072fa9B2',
-    installed: true,
     popular: true,
   },
   {
@@ -106,7 +105,6 @@ const WALLET_OPTIONS: {
     badgeColor: '#3b99fc',
     description: 'Vincular escaneando desde Rainbow, Trust, Zerion, Ledger o Safe.',
     address: '0x3A91b8C4096EdfC7802Db349F899e072fa9B2',
-    installed: true,
   },
   {
     id: 'coinbase',
@@ -115,8 +113,6 @@ const WALLET_OPTIONS: {
     badge: 'EIP-5792',
     badgeColor: '#0052ff',
     description: 'Autocustodia sin frases semilla. Acceso biométrico con Passkey.',
-    address: '0xCB82c4D649c096EdfC7802Db349F899e072fa9B2',
-    installed: true,
   },
 ];
 
@@ -133,6 +129,15 @@ export const ConnectWalletModal: React.FC<ConnectWalletModalProps> = ({
     walletState.isConnected ? 'details' : 'providers'
   );
   const [copied, setCopied] = useState(false);
+
+  // Real, live detection of an injected browser wallet — drives the "Detectada"
+  // badges below so they reflect what's actually installed, not a hardcoded claim.
+  const injected = getInjectedProvider();
+  const isRealBadge = (providerId: WalletProvider): string | null => {
+    if (providerId === 'metamask') return injected?.isMetaMask ? 'Detectada' : 'No Instalada';
+    if (providerId === 'coinbase') return injected?.isCoinbaseWallet ? 'Detectada' : 'No Instalada';
+    return null;
+  };
 
   // Trigger web audio pleasant chime
   const playConnectChime = () => {
@@ -160,26 +165,59 @@ export const ConnectWalletModal: React.FC<ConnectWalletModalProps> = ({
     }
   };
 
-  const handleSelectWallet = (option: (typeof WALLET_OPTIONS)[0]) => {
+  const handleSelectWallet = async (option: (typeof WALLET_OPTIONS)[0]) => {
     if (connectingProvider) return;
 
-    setConnectingProvider(option.id);
+    // WalletConnect has no browser extension to query directly here — this path
+    // stays an explicit, labeled simulation ("Simular Escaneo") since real
+    // WalletConnect support needs their SDK plus a project ID to be configured.
+    if (option.id === 'walletconnect') {
+      setConnectingProvider(option.id);
+      setTimeout(() => {
+        onConnect(option.id, option.address || '0x0000000000000000000000000000000000000000');
+        setConnectingProvider(null);
+        playConnectChime();
+        onShowToast(
+          'Sesión de Demostración',
+          'WalletConnect necesita configuración adicional; esta es una vinculación simulada, no tu wallet real.'
+        );
+        setActiveTab('details');
+        setTimeout(() => {
+          onClose();
+        }, 700);
+      }, 850);
+      return;
+    }
 
-    // Simulate realistic async handshake
-    setTimeout(() => {
-      onConnect(option.id, option.address);
-      setConnectingProvider(null);
+    // MetaMask / Coinbase Wallet: connect for real through the browser's
+    // injected EIP-1193 provider and use the account it actually returns.
+    const injected = getInjectedProvider();
+    if (!injected) {
+      onShowToast(
+        `${option.name} No Detectada`,
+        'Instala la extensión en tu navegador y recarga la página para conectar tu wallet real.'
+      );
+      return;
+    }
+
+    setConnectingProvider(option.id);
+    try {
+      const address = await requestRealAccount();
+      onConnect(option.id, address);
       playConnectChime();
       onShowToast(
-        'Wallet Vinculada con Éxito',
-        `Conectado a ${option.name} (${option.address.slice(0, 6)}...${option.address.slice(-4)})`
+        'Wallet Conectada',
+        `Conectado a ${option.name} (${address.slice(0, 6)}...${address.slice(-4)}). Cargando tu saldo real...`
       );
       setActiveTab('details');
-      // Close after short delay for user to see the confirmation
       setTimeout(() => {
         onClose();
       }, 700);
-    }, 850);
+    } catch {
+      onShowToast('Conexión Cancelada', 'Rechazaste la solicitud o no se pudo conectar con tu wallet.');
+    } finally {
+      setConnectingProvider(null);
+    }
   };
 
   const handleCopy = () => {
@@ -375,13 +413,20 @@ export const ConnectWalletModal: React.FC<ConnectWalletModalProps> = ({
         {(!walletState.isConnected || activeTab === 'providers') && (
           <div className="space-y-2.5 animate-in fade-in duration-200">
             <div className="text-xs text-[#bcc9cd] flex items-center justify-between px-1">
-              <span>Proveedores Web3 Detectados</span>
-              <span className="text-[11px] text-[#4edea3] font-code-sm">● Nodo Local Listo</span>
+              <span>Proveedores Web3</span>
+              {injected ? (
+                <span className="text-[11px] text-[#4edea3] font-code-sm">● Extensión Detectada</span>
+              ) : (
+                <span className="text-[11px] text-[#869397] font-code-sm">● Sin Extensión Web3</span>
+              )}
             </div>
 
             {WALLET_OPTIONS.map((option) => {
               const isSelected = walletState.isConnected && walletState.provider === option.id;
               const isConnectingThis = connectingProvider === option.id;
+              const liveBadge = isRealBadge(option.id);
+              const badgeLabel = liveBadge ?? option.badge;
+              const badgeColor = liveBadge === 'No Instalada' ? '#869397' : option.badgeColor;
 
               return (
                 <button
@@ -418,12 +463,12 @@ export const ConnectWalletModal: React.FC<ConnectWalletModalProps> = ({
                         <span
                           className="px-1.5 py-0.2 rounded text-[10px] font-code-sm font-semibold border"
                           style={{
-                            borderColor: `${option.badgeColor}40`,
-                            color: option.badgeColor,
-                            backgroundColor: `${option.badgeColor}15`,
+                            borderColor: `${badgeColor}40`,
+                            color: badgeColor,
+                            backgroundColor: `${badgeColor}15`,
                           }}
                         >
-                          {option.badge}
+                          {badgeLabel}
                         </span>
                       </div>
                       <p className="text-xs text-[#869397] mt-0.5 line-clamp-1">
