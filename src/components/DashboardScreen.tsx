@@ -440,7 +440,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       />
 
       {/* Network Asset Allocation Chart & Real-time Gas Heatmap, side by side on desktop */}
-      <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-4 lg:items-start">
+      <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-4 lg:items-stretch">
         <NetworkAllocationPieChart
           tokens={tokens}
           currentChain={currentChain}

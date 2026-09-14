@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { WalletProvider, WalletState } from '../types';
-import { getInjectedProvider, requestRealAccount } from '../utils/web3';
+import { CHAIN_INFO, getChainId, getInjectedProvider, requestRealAccount } from '../utils/web3';
 import {
   X,
   Check,
@@ -129,6 +129,22 @@ export const ConnectWalletModal: React.FC<ConnectWalletModalProps> = ({
     walletState.isConnected ? 'details' : 'providers'
   );
   const [copied, setCopied] = useState(false);
+  const [explorerBaseUrl, setExplorerBaseUrl] = useState('https://etherscan.io');
+
+  // Point "Ver en Explorer" at the block explorer for whichever chain the
+  // wallet is actually connected to, instead of always assuming Ethereum.
+  useEffect(() => {
+    if (!walletState.isConnected || walletState.provider === 'walletconnect') return;
+    let cancelled = false;
+    getChainId()
+      .then((chainId) => {
+        if (!cancelled) setExplorerBaseUrl(CHAIN_INFO[chainId]?.explorer || 'https://etherscan.io');
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [walletState.isConnected, walletState.provider]);
 
   // Real, live detection of an injected browser wallet — drives the "Detectada"
   // badges below so they reflect what's actually installed, not a hardcoded claim.
@@ -362,7 +378,7 @@ export const ConnectWalletModal: React.FC<ConnectWalletModalProps> = ({
             {/* Quick Actions */}
             <div className="grid grid-cols-2 gap-2">
               <a
-                href={`https://etherscan.io/address/${walletState.address}`}
+                href={`${explorerBaseUrl}/address/${walletState.address}`}
                 target="_blank"
                 rel="noreferrer"
                 className="h-10 rounded-xl bg-[#272a32] hover:bg-[#32353d] text-[#e1e2ec] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors border border-[#3d494c]/30"

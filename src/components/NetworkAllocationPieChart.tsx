@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { motion, AnimatePresence } from 'motion/react';
 import { TokenItem } from '../types';
@@ -99,53 +99,57 @@ export const NetworkAllocationPieChart: React.FC<NetworkAllocationPieChartProps>
   const [viewMode, setViewMode] = useState<'chart' | 'details'>('chart');
 
   // Compute total portfolio value
-  const totalValue = tokens.reduce((sum, t) => sum + (t.valueUsd || 0), 0);
+  const totalValue = useMemo(() => tokens.reduce((sum, t) => sum + (t.valueUsd || 0), 0), [tokens]);
 
-  // Group tokens by chain
-  const chainGroups = tokens.reduce((acc, t) => {
-    const chainKey = t.chain || 'eth';
-    if (!acc[chainKey]) {
-      acc[chainKey] = {
-        totalUsd: 0,
-        count: 0,
-        symbols: new Set<string>(),
-      };
-    }
-    acc[chainKey].totalUsd += t.valueUsd || 0;
-    acc[chainKey].count += 1;
-    acc[chainKey].symbols.add(t.symbol);
-    return acc;
-  }, {} as Record<string, { totalUsd: number; count: number; symbols: Set<string> }>);
+  // Group tokens by chain and build the structured allocation list. Memoized so
+  // the array reference is stable across unrelated re-renders — otherwise
+  // Recharts treats every render as new chart data and replays its entrance
+  // animation on the donut, which reads as constant, laggy re-drawing.
+  const allocations: ChainAllocation[] = useMemo(() => {
+    const chainGroups = tokens.reduce((acc, t) => {
+      const chainKey = t.chain || 'eth';
+      if (!acc[chainKey]) {
+        acc[chainKey] = {
+          totalUsd: 0,
+          count: 0,
+          symbols: new Set<string>(),
+        };
+      }
+      acc[chainKey].totalUsd += t.valueUsd || 0;
+      acc[chainKey].count += 1;
+      acc[chainKey].symbols.add(t.symbol);
+      return acc;
+    }, {} as Record<string, { totalUsd: number; count: number; symbols: Set<string> }>);
 
-  // Build structured allocation list
-  const allocations: ChainAllocation[] = Object.keys(chainGroups)
-    .map((chainKey) => {
-      const meta = CHAIN_METADATA[chainKey] || {
-        name: chainKey.toUpperCase(),
-        shortName: chainKey.toUpperCase(),
-        color: '#4cd7f6',
-        badgeBg: 'rgba(76, 215, 246, 0.15)',
-        category: 'Alt L1' as const,
-      };
+    return Object.keys(chainGroups)
+      .map((chainKey) => {
+        const meta = CHAIN_METADATA[chainKey] || {
+          name: chainKey.toUpperCase(),
+          shortName: chainKey.toUpperCase(),
+          color: '#4cd7f6',
+          badgeBg: 'rgba(76, 215, 246, 0.15)',
+          category: 'Alt L1' as const,
+        };
 
-      const val = chainGroups[chainKey].totalUsd;
-      const pct = totalValue > 0 ? (val / totalValue) * 100 : 0;
-      const symbolList: string[] = Array.from(chainGroups[chainKey].symbols);
+        const val = chainGroups[chainKey].totalUsd;
+        const pct = totalValue > 0 ? (val / totalValue) * 100 : 0;
+        const symbolList: string[] = Array.from(chainGroups[chainKey].symbols);
 
-      return {
-        id: chainKey,
-        name: meta.name,
-        shortName: meta.shortName,
-        value: parseFloat(val.toFixed(2)),
-        percentage: parseFloat(pct.toFixed(1)),
-        color: meta.color,
-        badgeBg: meta.badgeBg,
-        tokenCount: chainGroups[chainKey].count,
-        tokens: symbolList,
-        category: meta.category,
-      };
-    })
-    .sort((a, b) => b.value - a.value);
+        return {
+          id: chainKey,
+          name: meta.name,
+          shortName: meta.shortName,
+          value: parseFloat(val.toFixed(2)),
+          percentage: parseFloat(pct.toFixed(1)),
+          color: meta.color,
+          badgeBg: meta.badgeBg,
+          tokenCount: chainGroups[chainKey].count,
+          tokens: symbolList,
+          category: meta.category,
+        };
+      })
+      .sort((a, b) => b.value - a.value);
+  }, [tokens, totalValue]);
 
   // Compute category rollups
   const rollupL2Percentage = allocations
@@ -195,7 +199,7 @@ export const NetworkAllocationPieChart: React.FC<NetworkAllocationPieChartProps>
   return (
     <div
       id="network-allocation-pie-chart"
-      className="relative overflow-hidden rounded-2xl bg-[#1d1f27] border border-[#3d494c]/60 p-4 shadow-xl space-y-4"
+      className="relative overflow-hidden rounded-2xl bg-[#1d1f27] border border-[#3d494c]/60 p-4 shadow-xl space-y-4 h-full"
     >
       {/* Background ambient lighting */}
       <div className="absolute top-0 right-0 w-44 h-44 bg-[#627eea]/10 rounded-full blur-3xl pointer-events-none" />
