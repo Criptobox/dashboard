@@ -74,18 +74,47 @@ export default function App() {
     });
   };
 
+  // True only for an actual injected-wallet connection (MetaMask, Coinbase
+  // Wallet extension, etc.) — WalletConnect here is an explicitly labeled
+  // simulation with no real address behind it, so it must keep showing the
+  // demo experience rather than being treated as "your real wallet".
+  const isRealConnection = walletState.isConnected && walletState.provider !== 'walletconnect';
+
   // Real on-chain balance for the connected wallet (native coin + USDC on whatever
   // chain the wallet is pointed at), fetched directly through the wallet's own
   // provider — replaces the demo portfolio the moment a real wallet connects.
   const realPortfolio = useRealWalletPortfolio(walletState);
 
   useEffect(() => {
-    if (walletState.isConnected && realPortfolio.tokens) {
+    if (isRealConnection && realPortfolio.tokens) {
       setTokens(realPortfolio.tokens);
-    } else if (!walletState.isConnected) {
+    } else if (!isRealConnection) {
       setTokens(INITIAL_TOKENS);
     }
-  }, [walletState.isConnected, realPortfolio.tokens]);
+  }, [isRealConnection, realPortfolio.tokens]);
+
+  // None of the app's other "findings" are real: there's no legitimate way to
+  // check airdrop eligibility, scan for abandoned/rescuable funds, read NFT
+  // holdings, or produce security findings for an arbitrary address without a
+  // paid indexing service. Rather than keep showing the demo's fabricated
+  // airdrops, rescuable contracts, NFTs, and AI findings as if they belonged
+  // to the connected wallet, clear them out the moment a real wallet connects
+  // (restoring the demo content on disconnect, or for the WalletConnect demo).
+  useEffect(() => {
+    if (isRealConnection) {
+      setAirdrops([]);
+      setRescueContracts([]);
+      setNfts([]);
+      setAiActions([]);
+      setTransactions([]);
+    } else {
+      setAirdrops(INITIAL_AIRDROPS);
+      setRescueContracts(INITIAL_RESCUE_CONTRACTS);
+      setNfts(INITIAL_NFTS);
+      setAiActions(INITIAL_AI_ACTIONS);
+      setTransactions(INITIAL_TRANSACTIONS);
+    }
+  }, [isRealConnection]);
 
   // Keep the connected address in sync if the user switches or locks accounts
   // directly inside their wallet extension (rather than through this app's UI).
@@ -139,11 +168,11 @@ export default function App() {
   // Surface real-portfolio fetch outcomes so the user always knows whether
   // they're looking at their actual on-chain balance or why it isn't available.
   useEffect(() => {
-    if (!walletState.isConnected) return;
+    if (!isRealConnection) return;
     if (realPortfolio.error === 'NO_PROVIDER') {
       showToast('Wallet No Detectada', 'No se encontró una extensión Web3 inyectada para leer tu saldo real.');
     } else if (realPortfolio.error === 'UNSUPPORTED_CHAIN') {
-      showToast('Red No Soportada', 'Cambia a Ethereum, Polygon, Arbitrum, Base, Optimism o BNB Chain para ver tu saldo real.');
+      showToast('Red No Soportada', 'Tu wallet está en una red que aún no reconocemos. Cambia a una red EVM principal para ver tu saldo real.');
     } else if (realPortfolio.error) {
       showToast('No se Pudo Leer tu Saldo', 'Ocurrió un error consultando la red. Intenta de nuevo desde tu wallet.');
     } else if (realPortfolio.tokens && !realPortfolio.isLoading) {
@@ -151,7 +180,7 @@ export default function App() {
       showToast('Saldo Real Cargado', `Mostrando tu balance on-chain actual en ${chainLabel}.`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [realPortfolio.error, realPortfolio.tokens]);
+  }, [isRealConnection, realPortfolio.error, realPortfolio.tokens]);
 
   // Toggle Global Gas Saver Mode
   const handleToggleGasSaverMode = () => {

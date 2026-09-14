@@ -55,7 +55,9 @@ export const AirdropsScreen: React.FC<AirdropsScreenProps> = ({
       setIsScanning(false);
       onShowToast(
         'Escaneo Multichain Completo',
-        '14 redes analizadas: 2 airdrops listos para reclamar y 3 en fase avanzada'
+        readyAirdrops.length > 0 || nearAirdrops.length > 0
+          ? `14 redes analizadas: ${readyAirdrops.length} airdrops listos para reclamar y ${nearAirdrops.length} en fase avanzada`
+          : '14 redes analizadas: sin airdrops elegibles detectados para esta wallet'
       );
     }, 1500);
   };

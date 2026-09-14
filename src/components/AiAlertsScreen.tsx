@@ -289,7 +289,7 @@ export const AiAlertsScreen: React.FC<AiAlertsScreenProps> = ({
             <Sparkles className={`w-3.5 h-3.5 ${intelligenceTab === 'actions' ? 'text-[#4edea3]' : ''}`} />
             <span>Acciones IA</span>
             <span className="text-[10px] font-code-sm px-1.5 py-0.2 rounded bg-[#10131a] text-[#4edea3]">
-              3
+              {aiActions.filter((a) => !a.completed).length}
             </span>
           </button>
         </div>
@@ -313,9 +313,19 @@ export const AiAlertsScreen: React.FC<AiAlertsScreenProps> = ({
             Acciones Inteligentes Sugeridas
           </h2>
           <span className="text-xs font-code-sm text-[#4edea3] bg-[#4edea3]/10 px-2 py-0.5 rounded-md border border-[#4edea3]/20">
-            3 Detecciones
+            {aiActions.length} {aiActions.length === 1 ? 'Detección' : 'Detecciones'}
           </span>
         </div>
+
+        {aiActions.length === 0 && (
+          <div className="p-8 text-center rounded-2xl bg-[#1d1f27] border border-[#272a32]">
+            <CheckCircle2 className="w-10 h-10 text-[#4edea3] mx-auto mb-2 opacity-60" />
+            <p className="text-sm font-semibold text-[#e1e2ec]">Sin hallazgos por ahora</p>
+            <p className="text-xs text-[#bcc9cd] mt-1">
+              No se detectaron aprobaciones riesgosas ni oportunidades para esta wallet.
+            </p>
+          </div>
+        )}
 
         {/* CARD 1: SECURITY ALERT */}
         {aiActions

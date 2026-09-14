@@ -182,6 +182,15 @@ export const RescueScreen: React.FC<RescueScreenProps> = ({
       </section>
 
       {/* Detailed Contract Cards List */}
+      {contracts.length === 0 && (
+        <div className="p-8 text-center rounded-2xl bg-[#1d1f27] border border-[#272a32]">
+          <ShieldCheck className="w-10 h-10 text-[#4edea3] mx-auto mb-2 opacity-60" />
+          <p className="text-sm font-semibold text-[#e1e2ec]">Sin fondos rescatables detectados</p>
+          <p className="text-xs text-[#bcc9cd] mt-1">
+            No se encontraron contratos abandonados u olvidados asociados a esta wallet.
+          </p>
+        </div>
+      )}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {contracts.map((item) => (
           <article

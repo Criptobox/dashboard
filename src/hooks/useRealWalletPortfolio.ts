@@ -38,7 +38,11 @@ export function useRealWalletPortfolio(walletState: WalletState): RealPortfolioR
   }, [walletState.isConnected]);
 
   useEffect(() => {
-    if (!walletState.isConnected || !walletState.address) {
+    // WalletConnect has no browser extension here to actually query — it's an
+    // explicitly labeled simulation, so it must never trigger a real on-chain
+    // read (which would otherwise query whatever address the simulation made
+    // up, through whatever injected provider happens to be installed).
+    if (!walletState.isConnected || !walletState.address || walletState.provider === 'walletconnect') {
       setTokens(null);
       setError(null);
       return;
@@ -121,7 +125,7 @@ export function useRealWalletPortfolio(walletState: WalletState): RealPortfolioR
     return () => {
       cancelled = true;
     };
-  }, [walletState.isConnected, walletState.address, chainNonce]);
+  }, [walletState.isConnected, walletState.address, walletState.provider, chainNonce]);
 
   return { tokens, isLoading, error };
 }

@@ -346,10 +346,12 @@ export const NftsScreen: React.FC<NftsScreenProps> = ({
                 <span>{nfts.length} Activos en Bóveda</span>
               </div>
 
-              <div className="flex items-center gap-1 font-code-sm text-[#4edea3] font-semibold">
-                <TrendingUp className="w-3.5 h-3.5" />
-                +3.8% (24h)
-              </div>
+              {nfts.length > 0 && (
+                <div className="flex items-center gap-1 font-code-sm text-[#4edea3] font-semibold">
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  +3.8% (24h)
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -363,7 +365,13 @@ export const NftsScreen: React.FC<NftsScreenProps> = ({
       {/* Primary Action: Set Price / Bid Alert */}
       <div className="px-4 lg:px-6 pb-4">
         <button
-          onClick={() => handleOpenAlertModal()}
+          onClick={() => {
+            if (nfts.length === 0) {
+              onShowToast('Sin NFTs en Bóveda', 'No hay activos digitales detectados para configurar alertas.');
+              return;
+            }
+            handleOpenAlertModal();
+          }}
           className="w-full h-12 rounded-xl bg-[#4cd7f6] hover:bg-[#06b6d4] text-[#003640] font-sans font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#4cd7f6]/15 transition-all active:scale-[0.98] cursor-pointer"
         >
           <Bell className="w-4 h-4 fill-current" />
@@ -441,27 +449,40 @@ export const NftsScreen: React.FC<NftsScreenProps> = ({
 
       {/* NFT Gallery Feed */}
       <div className="px-4 lg:px-6 pt-1">
-        {/* Empty State when filters yield 0 matches */}
+        {/* Empty State: either the wallet genuinely holds no NFTs, or filters matched nothing */}
         {displayedNfts.length === 0 && (
           <div className="p-8 rounded-2xl bg-[#14161f] border border-[#272a32] flex flex-col items-center justify-center text-center gap-3 my-4">
             <div className="w-12 h-12 rounded-2xl bg-[#1d1f27] border border-[#3d494c]/40 flex items-center justify-center text-[#869397]">
               <Search className="w-6 h-6 text-[#4cd7f6]" />
             </div>
-            <div className="flex flex-col gap-1">
-              <h3 className="font-headline-sm text-base text-[#e1e2ec] font-bold">
-                Ningún NFT coincide con los filtros
-              </h3>
-              <p className="text-xs text-[#bcc9cd] max-w-xs leading-relaxed">
-                No se encontraron activos digitales que cumplan con la combinación de cadena, colección o rareza seleccionada.
-              </p>
-            </div>
-            <button
-              onClick={handleResetFilters}
-              className="mt-2 px-4 py-2.5 rounded-xl bg-[#4cd7f6] hover:bg-[#06b6d4] text-[#003640] font-sans text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Restablecer Filtros</span>
-            </button>
+            {nfts.length === 0 ? (
+              <div className="flex flex-col gap-1">
+                <h3 className="font-headline-sm text-base text-[#e1e2ec] font-bold">
+                  Sin NFTs detectados en esta wallet
+                </h3>
+                <p className="text-xs text-[#bcc9cd] max-w-xs leading-relaxed">
+                  No se encontraron activos digitales asociados a la dirección conectada.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-col gap-1">
+                  <h3 className="font-headline-sm text-base text-[#e1e2ec] font-bold">
+                    Ningún NFT coincide con los filtros
+                  </h3>
+                  <p className="text-xs text-[#bcc9cd] max-w-xs leading-relaxed">
+                    No se encontraron activos digitales que cumplan con la combinación de cadena, colección o rareza seleccionada.
+                  </p>
+                </div>
+                <button
+                  onClick={handleResetFilters}
+                  className="mt-2 px-4 py-2.5 rounded-xl bg-[#4cd7f6] hover:bg-[#06b6d4] text-[#003640] font-sans text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Restablecer Filtros</span>
+                </button>
+              </>
+            )}
           </div>
         )}
 
