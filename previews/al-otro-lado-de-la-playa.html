@@ -643,8 +643,8 @@ mark { background: color-mix(in srgb, var(--gold) 45%, transparent); color: inhe
 
 .stack { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; }
 .layer {
-  position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px; width: var(--lw, 86%);
-  padding: 8px 14px; border-radius: var(--lr, 14px); background: var(--lc); color: var(--lt, #3b2a18); font-size: 13px; font-weight: 800;
+  position: relative; display: flex; align-items: center; justify-content: center; gap: 10px; width: var(--lw, 86%);
+  min-height: 46px; padding: 8px 44px; border-radius: var(--lr, 14px); background: var(--lc); color: var(--lt, #3b2a18); font-size: 13px; font-weight: 800;
   box-shadow: 0 6px 14px -8px rgba(0, 0, 0, .45), inset 0 -3px 0 rgba(0, 0, 0, .12), inset 0 2px 0 rgba(255, 255, 255, .35);
   opacity: 0; transform: translateY(calc(var(--i) * -18px)) scaleY(.6); transition: transform .6s cubic-bezier(.34, 1.4, .5, 1), opacity .4s ease, margin .5s ease;
   transition-delay: calc(var(--i) * 55ms);
@@ -750,7 +750,8 @@ textarea.note:focus, input.field:focus { border-color: var(--coral); box-shadow:
 .remember { display: flex; align-items: center; gap: 10px; margin-top: 12px; font-size: 13px; font-weight: 700; color: var(--muted); }
 .remember input { width: 20px; height: 20px; accent-color: var(--coral); }
 .layer[data-rm] { cursor: pointer; }
-.layer .lx { flex: none; font-size: 11px; font-weight: 800; opacity: .8; line-height: 1; white-space: nowrap; }
+.layer .lx { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: rgba(0,0,0,.15); font-size: 12px; font-weight: 900; line-height: 1; }
+.layer .lx.add { background: rgba(255,255,255,.8); color: #3f9e5f; font-size: 15px; }
 .layer > span:first-child { display: inline-flex; align-items: center; gap: 6px; line-height: 1.2; }
 .layer.off { filter: grayscale(1); opacity: .38 !important; }
 .layer.off .ln { text-decoration: line-through; text-decoration-thickness: 2px; }
@@ -1379,7 +1380,7 @@ function buildStack(p, still) {
     const isExtra = extraNames.includes(ing) && !(isBurger && (first || last));
     const rm = !isExtra && canRemove(ing);
     const off = rm && removed.has(ing);
-    const right = isExtra ? '<span class="lx">＋ agrego</span>' : rm ? `<span class="lx">${off ? "↺ poner" : "✕ quitar"}</span>` : "";
+    const right = isExtra ? '<span class="lx add" title="Agrego">+</span>' : rm ? `<span class="lx">${off ? "↺" : "✕"}</span>` : "";
     return `<div class="layer${off ? " off" : ""}"${rm ? ` data-rm="${esc(ing)}" role="button" tabindex="0" aria-pressed="${off}"` : ""} style="--i:${i};--lc:${L.c};--lt:${L.t};--lw:${w}%;--lr:${r}"><span><span class="le">${L.e}</span> <span class="ln">${esc(ing)}</span></span>${right}</div>`;
   }).join("");
   const st = $("#sh-stack");
