@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gelato Nube · Carta de Helados</title>
+  <meta name="description" content="Carta de la heladería artesanal Gelato Nube: helados, paletas, copas y batidos." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Burbujas de fondo -->
+  <div class="bg-blobs" aria-hidden="true">
+    <span></span><span></span><span></span><span></span>
+  </div>
+
+  <header class="topbar">
+    <a class="brand" href="#">
+      <span class="brand-icon" aria-hidden="true">🍦</span>
+      <span>Gelato <strong>Nube</strong></span>
+    </a>
+    <nav class="nav">
+      <a href="#carta">Carta</a>
+      <a href="#info">Horario</a>
+      <button class="cart-btn" id="cartBtn" aria-label="Ver mi pedido">
+        🛒 <span class="cart-count" id="cartCount">0</span>
+      </button>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div class="hero-text">
+      <p class="eyebrow">Heladería artesanal desde 1998</p>
+      <h1>Helados que <span class="gradient-text">flotan</span> de sabor</h1>
+      <p class="lead">Elaborados cada mañana con leche fresca, fruta de temporada y mucho cariño. Pasa el ratón sobre las tarjetas y toca una para ver sus ingredientes.</p>
+      <a href="#carta" class="btn-primary">Ver la carta ↓</a>
+    </div>
+
+    <div class="hero-scene" aria-hidden="true">
+      <div class="big-cone">
+        <div class="scoop s3"></div>
+        <div class="scoop s2"></div>
+        <div class="scoop s1"></div>
+        <div class="cherry"></div>
+        <div class="cone"></div>
+      </div>
+      <div class="sprinkle-ring"></div>
+    </div>
+  </section>
+
+  <main id="carta" class="menu">
+    <h2 class="section-title">Nuestra carta</h2>
+
+    <div class="filters" role="tablist" aria-label="Categorías">
+      <button class="chip active" data-filter="todos" role="tab" aria-selected="true">Todos</button>
+      <button class="chip" data-filter="clasicos" role="tab" aria-selected="false">Clásicos</button>
+      <button class="chip" data-filter="frutales" role="tab" aria-selected="false">Frutales</button>
+      <button class="chip" data-filter="especiales" role="tab" aria-selected="false">Especiales</button>
+      <button class="chip" data-filter="copas" role="tab" aria-selected="false">Copas</button>
+      <button class="chip" data-filter="batidos" role="tab" aria-selected="false">Batidos</button>
+    </div>
+
+    <div class="cards" id="cards"></div>
+  </main>
+
+  <section id="info" class="info">
+    <div class="info-card float-slow">
+      <h3>🕒 Horario</h3>
+      <p>Lunes a jueves: 12:00 – 22:00</p>
+      <p>Viernes a domingo: 11:00 – 00:00</p>
+    </div>
+    <div class="info-card float-slow delay">
+      <h3>📍 Dónde estamos</h3>
+      <p>Calle del Barquillo 12</p>
+      <p>Tel. 600 123 456</p>
+    </div>
+    <div class="info-card float-slow delay2">
+      <h3>🌱 Opciones</h3>
+      <p><span class="tag vegan">Vegano</span> <span class="tag gf">Sin gluten</span></p>
+      <p>Pregúntanos por alérgenos</p>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <p>© <span id="year"></span> Gelato Nube · Hecho con 🍨 y código</p>
+  </footer>
+
+  <!-- Panel de pedido -->
+  <aside class="drawer" id="drawer" aria-hidden="true">
+    <div class="drawer-head">
+      <h3>Mi pedido</h3>
+      <button class="close" id="closeDrawer" aria-label="Cerrar">✕</button>
+    </div>
+    <ul class="order-list" id="orderList"></ul>
+    <div class="drawer-foot">
+      <p class="total">Total: <strong id="orderTotal">0,00 €</strong></p>
+      <button class="btn-primary full" id="clearOrder">Vaciar pedido</button>
+    </div>
+  </aside>
+  <div class="overlay" id="overlay"></div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
