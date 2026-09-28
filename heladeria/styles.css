@@ -357,6 +357,15 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   background: radial-gradient(circle at 30% 30%, #ff8080, #d0103a);
 }
 
+/* Foto subida desde el panel admin */
+.photo {
+  width: 160px; height: 160px; object-fit: cover; border-radius: 50%;
+  border: 6px solid rgba(255, 255, 255, .85);
+  box-shadow: 0 18px 28px -10px rgba(0, 0, 0, .35);
+}
+
+.menu-msg { grid-column: 1 / -1; text-align: center; color: var(--ink-soft); font-size: 1.1rem; padding: 40px 0; }
+
 /* ---------- Info ---------- */
 .info {
   max-width: 1200px; margin: 0 auto; padding: 40px clamp(16px, 5vw, 60px) 60px;
@@ -373,6 +382,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .float-slow.delay2 { animation-delay: -4.6s; }
 
 .footer { text-align: center; padding: 30px 16px 40px; color: var(--ink-soft); font-size: .9rem; }
+.admin-link { color: var(--ink-soft); }
 
 /* ---------- Panel de pedido ---------- */
 .overlay {
