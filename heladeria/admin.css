@@ -162,3 +162,18 @@ legend { font-weight: 800; font-size: .85rem; color: var(--ink-soft); margin-bot
   .cat-form { grid-template-columns: 56px 1fr 72px; }
   .cat-form .btn-primary, .cat-form .btn-ghost { grid-column: span 3; }
 }
+
+/* ---------- Confirmación ---------- */
+.confirm-backdrop {
+  position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px;
+  background: rgba(30, 10, 30, .45); animation: fadeIn .15s;
+}
+.confirm-box {
+  width: min(420px, 100%); padding: 22px; border-radius: 22px; background: var(--bg);
+  box-shadow: var(--shadow); display: grid; gap: 18px; animation: pop .2s both;
+}
+.confirm-box p { font-weight: 700; line-height: 1.45; }
+.confirm-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+.confirm-actions .btn-primary { padding: 10px 22px; }
+.btn-primary.danger { background: linear-gradient(135deg, #ff5c7a, #d0103a); box-shadow: 0 10px 20px -8px rgba(208, 16, 58, .6); }
+@keyframes fadeIn { from { opacity: 0; } }

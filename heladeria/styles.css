@@ -27,6 +27,7 @@
     --card: rgba(48, 32, 58, 0.82);
     --card-border: rgba(255, 255, 255, 0.08);
     --shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.6), 0 10px 20px -10px rgba(0, 0, 0, 0.4);
+    color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
@@ -37,7 +38,8 @@
     --card: rgba(48, 32, 58, 0.82);
     --card-border: rgba(255, 255, 255, 0.08);
     --shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.6), 0 10px 20px -10px rgba(0, 0, 0, 0.4);
-  }
+    color-scheme: dark;
+}
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -71,7 +73,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 
 /* ---------- Barra superior ---------- */
 .topbar {
-  position: sticky; top: 0; z-index: 20;
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
   display: flex; align-items: center; justify-content: space-between;
   padding: 14px clamp(16px, 5vw, 60px);
   backdrop-filter: blur(14px);

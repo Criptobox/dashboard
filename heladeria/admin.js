@@ -25,6 +25,36 @@ function toast(msg) {
   toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
 }
 
+// Ventana de confirmación propia (confirm() no funciona en todos los visores)
+function askConfirm(message, okLabel = "Borrar") {
+  return new Promise((resolve) => {
+    const box = document.createElement("div");
+    box.className = "confirm-backdrop";
+    box.innerHTML = `
+      <div class="confirm-box" role="alertdialog" aria-modal="true" aria-labelledby="confirmMsg">
+        <p id="confirmMsg">${esc(message)}</p>
+        <div class="confirm-actions">
+          <button type="button" class="btn-ghost" data-answer="no">Cancelar</button>
+          <button type="button" class="btn-primary danger" data-answer="yes">${esc(okLabel)}</button>
+        </div>
+      </div>`;
+    const close = (answer) => {
+      document.removeEventListener("keydown", onKey);
+      box.remove();
+      resolve(answer);
+    };
+    const onKey = (e) => { if (e.key === "Escape") close(false); };
+    box.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-answer]");
+      if (btn) close(btn.dataset.answer === "yes");
+      else if (e.target === box) close(false);
+    });
+    document.addEventListener("keydown", onKey);
+    document.body.appendChild(box);
+    $("[data-answer=yes]", box).focus();
+  });
+}
+
 const errorText = (err) => {
   const msg = err?.message || String(err);
   if (/row-level security|permission denied|403/i.test(msg)) return "Tu usuario no tiene permisos de administrador.";
@@ -98,7 +128,7 @@ $("#loginForm").addEventListener("submit", async (e) => {
 });
 
 $("#resetDemo").addEventListener("click", async () => {
-  if (!confirm("¿Borrar todos tus cambios de la demo y volver a la carta de ejemplo?")) return;
+  if (!(await askConfirm("¿Borrar todos tus cambios de la demo y volver a la carta de ejemplo?", "Restaurar"))) return;
   await DB.resetDemo();
   await loadAll();
   toast("🔄 Carta de ejemplo restaurada");
@@ -177,7 +207,7 @@ listEl.addEventListener("click", async (e) => {
   }
 
   if (btn.dataset.action === "delete") {
-    if (!confirm(`¿Borrar "${p.name}" definitivamente?\nSi solo quieres ocultarlo, usa el interruptor.`)) return;
+    if (!(await askConfirm(`¿Borrar "${p.name}" definitivamente? Si solo quieres ocultarlo, usa el interruptor.`))) return;
     try {
       await DB.remove(p.id);
       items = items.filter((x) => x.id !== p.id);
@@ -444,7 +474,7 @@ $("#catList").addEventListener("click", async (e) => {
       $("#catError").textContent = errorText({ code: "23503" });
       return;
     }
-    if (!confirm(`¿Borrar la categoría "${c.name}"?`)) return;
+    if (!(await askConfirm(`¿Borrar la categoría "${c.name}"?`))) return;
     try {
       await DB.removeCategory(c.slug);
       cats = cats.filter((x) => x.slug !== c.slug);
