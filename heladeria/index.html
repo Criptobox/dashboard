@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Gelato Nube · Carta de Helados</title>
-  <meta name="description" content="Carta de la heladería artesanal Gelato Nube: helados, paletas, copas y batidos." />
+  <meta name="description" content="Carta de la heladería artesanal Gelato Nube: helados, copas, batidos, dulces y bebidas." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet" />
@@ -34,7 +34,7 @@
     <div class="hero-text">
       <p class="eyebrow">Heladería artesanal desde 1998</p>
       <h1>Helados que <span class="gradient-text">flotan</span> de sabor</h1>
-      <p class="lead">Elaborados cada mañana con leche fresca, fruta de temporada y mucho cariño. Pasa el ratón sobre las tarjetas y toca una para ver sus ingredientes.</p>
+      <p class="lead">Helados, dulces y bebidas elaborados cada mañana con leche fresca, fruta de temporada y mucho cariño. Pasa el ratón sobre las tarjetas y toca una para ver sus ingredientes.</p>
       <a href="#carta" class="btn-primary">Ver la carta ↓</a>
     </div>
 
@@ -53,14 +53,7 @@
   <main id="carta" class="menu">
     <h2 class="section-title">Nuestra carta</h2>
 
-    <div class="filters" role="tablist" aria-label="Categorías">
-      <button class="chip active" data-filter="todos" role="tab" aria-selected="true">Todos</button>
-      <button class="chip" data-filter="clasicos" role="tab" aria-selected="false">Clásicos</button>
-      <button class="chip" data-filter="frutales" role="tab" aria-selected="false">Frutales</button>
-      <button class="chip" data-filter="especiales" role="tab" aria-selected="false">Especiales</button>
-      <button class="chip" data-filter="copas" role="tab" aria-selected="false">Copas</button>
-      <button class="chip" data-filter="batidos" role="tab" aria-selected="false">Batidos</button>
-    </div>
+    <div class="filters" id="filters" role="tablist" aria-label="Categorías"></div>
 
     <div class="cards" id="cards"></div>
   </main>

@@ -4,12 +4,30 @@
 -- Se puede ejecutar varias veces sin romper nada.
 -- ==========================================================
 
--- 1) Tabla de productos (sabores, copas y batidos)
+-- 1) Categorías (se crean y borran desde el panel admin)
+create table if not exists public.categorias (
+  slug     text primary key check (slug ~ '^[a-z0-9-]{1,40}$'),
+  name     text not null check (char_length(name) between 1 and 30),
+  emoji    text,
+  position integer not null default 0
+);
+
+insert into public.categorias (slug, name, emoji, position) values
+  ('clasicos',   'Clásicos',   '🍦', 0),
+  ('frutales',   'Frutales',   '🍓', 1),
+  ('especiales', 'Especiales', '✨', 2),
+  ('copas',      'Copas',      '🍨', 3),
+  ('batidos',    'Batidos',    '🥤', 4),
+  ('dulces',     'Dulces',     '🍩', 5),
+  ('bebidas',    'Bebidas',    '☕', 6)
+on conflict (slug) do nothing;
+
+-- 2) Productos (helados, copas, batidos, dulces, bebidas…)
 create table if not exists public.productos (
   id          uuid primary key default gen_random_uuid(),
   name        text not null check (char_length(name) between 1 and 80),
-  category    text not null check (category in ('clasicos', 'frutales', 'especiales', 'copas', 'batidos')),
-  type        text not null default 'cone' check (type in ('cone', 'cup', 'shake')),
+  category    text not null,
+  type        text not null default 'cone',
   description text not null default '',
   price       numeric(6, 2) not null check (price >= 0),
   color1      text not null default '#ffd1e3',
@@ -29,6 +47,24 @@ create table if not exists public.productos (
   updated_at  timestamptz not null default now()
 );
 
+-- Si ya tenías la versión anterior: quita la lista fija de categorías y tipos
+alter table public.productos drop constraint if exists productos_category_check;
+alter table public.productos drop constraint if exists productos_type_check;
+alter table public.productos add constraint productos_type_check
+  check (type in ('cone', 'cup', 'shake', 'donut', 'cupcake', 'drink', 'coffee'));
+
+-- Cada producto pertenece a una categoría existente.
+-- No se puede borrar una categoría que todavía tenga productos.
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'productos_category_fkey') then
+    alter table public.productos
+      add constraint productos_category_fkey foreign key (category)
+      references public.categorias (slug) on update cascade on delete restrict;
+  end if;
+end;
+$$;
+
 create or replace function public.touch_updated_at()
 returns trigger language plpgsql as $$
 begin
@@ -42,7 +78,7 @@ create trigger productos_updated_at
   before update on public.productos
   for each row execute function public.touch_updated_at();
 
--- 2) Lista de administradores (por correo)
+-- 3) Lista de administradores (por correo)
 --    Sin políticas: nadie puede leerla desde la web, solo la función is_admin().
 create table if not exists public.admins (
   email text primary key
@@ -61,7 +97,7 @@ as $$
 $$;
 grant execute on function public.is_admin() to anon, authenticated;
 
--- 3) Seguridad: todos ven los productos disponibles, solo los admins editan
+-- 4) Seguridad: todos ven la carta, solo los admins editan
 alter table public.productos enable row level security;
 
 drop policy if exists "productos: leer"      on public.productos;
@@ -78,7 +114,23 @@ create policy "productos: modificar" on public.productos
 create policy "productos: borrar" on public.productos
   for delete to authenticated using (public.is_admin());
 
--- 4) Almacenamiento de fotos (bucket público "productos")
+alter table public.categorias enable row level security;
+
+drop policy if exists "categorias: leer"      on public.categorias;
+drop policy if exists "categorias: crear"     on public.categorias;
+drop policy if exists "categorias: modificar" on public.categorias;
+drop policy if exists "categorias: borrar"    on public.categorias;
+
+create policy "categorias: leer" on public.categorias
+  for select using (true);
+create policy "categorias: crear" on public.categorias
+  for insert to authenticated with check (public.is_admin());
+create policy "categorias: modificar" on public.categorias
+  for update to authenticated using (public.is_admin()) with check (public.is_admin());
+create policy "categorias: borrar" on public.categorias
+  for delete to authenticated using (public.is_admin());
+
+-- 5) Almacenamiento de fotos (bucket público "productos")
 insert into storage.buckets (id, name, public)
 values ('productos', 'productos', true)
 on conflict (id) do nothing;
@@ -97,7 +149,7 @@ create policy "fotos: modificar" on storage.objects
 create policy "fotos: borrar" on storage.objects
   for delete to authenticated using (bucket_id = 'productos' and public.is_admin());
 
--- 5) Da permisos de admin a tu correo (cámbialo por el tuyo).
+-- 6) Da permisos de admin a tu correo (cámbialo por el tuyo).
 --    Debe ser el mismo correo del usuario creado en Authentication → Users.
 insert into public.admins (email) values ('tu-correo@ejemplo.com')
 on conflict (email) do nothing;

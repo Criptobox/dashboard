@@ -19,7 +19,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #1d1424;
     --bg-2: #2a1c33;
     --ink: #fbeaf6;
@@ -29,6 +29,15 @@
     --shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.6), 0 10px 20px -10px rgba(0, 0, 0, 0.4);
   }
 }
+:root[data-theme="dark"] {
+    --bg: #1d1424;
+    --bg-2: #2a1c33;
+    --ink: #fbeaf6;
+    --ink-soft: #c9aecf;
+    --card: rgba(48, 32, 58, 0.82);
+    --card-border: rgba(255, 255, 255, 0.08);
+    --shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.6), 0 10px 20px -10px rgba(0, 0, 0, 0.4);
+  }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -259,7 +268,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .sizes button.active { background: var(--card); color: var(--ink); box-shadow: 0 2px 6px rgba(0, 0, 0, .12); }
 
 .add-btn {
-  width: 46px; height: 46px; border-radius: 50%; font-size: 1.5rem; font-weight: 800; color: #fff;
+  width: 46px; height: 46px; border-radius: 50%; font-size: 1.5rem; font-weight: 800; color: var(--on-c2, #fff);
   background: linear-gradient(135deg, var(--c2), var(--c1));
   box-shadow: 0 10px 18px -6px var(--c2);
   transform: translateZ(40px); transition: transform .2s;
@@ -346,15 +355,112 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
               radial-gradient(circle at 50% 35%, #fff 22px, transparent 23px);
   z-index: 2;
 }
-.treat.shake .straw {
+.treat .straw {
   position: absolute; top: -20px; left: 58%; width: 8px; height: 90px; border-radius: 4px;
   background: repeating-linear-gradient(0deg, #ff6fa8 0 8px, #fff 8px 16px);
   transform: rotate(14deg); z-index: 1;
 }
-.treat.shake .cherry-sm {
+.treat .cherry-sm {
   position: absolute; top: 2px; left: 50%; width: 20px; height: 20px; border-radius: 50%;
   transform: translateX(-50%); z-index: 3;
   background: radial-gradient(circle at 30% 30%, #ff8080, #d0103a);
+}
+
+/* Donut */
+.treat.donut .ring {
+  position: absolute; bottom: 36px; left: 50%; width: 118px; height: 104px; transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, transparent 17px, #b87333 18px, #e8ae66 24px, #d18d3f 56px);
+  box-shadow: inset -8px -10px 16px rgba(0, 0, 0, .18);
+}
+.treat.donut .icing {
+  position: absolute; inset: 6px 7px 12px;
+  border-radius: 48% 52% 46% 54% / 52% 46% 54% 48%;
+  background: radial-gradient(ellipse at center, transparent 19px, var(--c2) 20px, var(--c1) 46px);
+  box-shadow: inset 6px 6px 10px rgba(255, 255, 255, .45);
+}
+.treat.donut .icing::before {
+  content: ""; position: absolute; inset: 6px; border-radius: 50%;
+  background:
+    linear-gradient(35deg, transparent 46%, var(--sprinkle) 46% 54%, transparent 54%) 8px 10px / 16px 14px,
+    linear-gradient(-40deg, transparent 46%, #fff 46% 54%, transparent 54%) 2px 2px / 20px 18px;
+  -webkit-mask: radial-gradient(ellipse at center, transparent 22px, #000 23px);
+          mask: radial-gradient(ellipse at center, transparent 22px, #000 23px);
+  opacity: .9;
+}
+
+/* Cupcake */
+.treat.cupcake .wrap {
+  position: absolute; bottom: 10px; left: 50%; width: 96px; height: 64px; transform: translateX(-50%);
+  clip-path: polygon(0 0, 100% 0, 84% 100%, 16% 100%);
+  background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--c2) 55%, #fff) 0 9px, var(--c2) 9px 15px);
+  box-shadow: inset 0 -8px 12px rgba(0, 0, 0, .12);
+}
+.treat.cupcake .frost {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(145deg, var(--c1), var(--c2));
+  box-shadow: inset -8px -8px 14px rgba(0, 0, 0, .1), inset 6px 6px 12px rgba(255, 255, 255, .6);
+}
+.treat.cupcake .f1 { bottom: 64px; width: 112px; height: 46px; border-radius: 50%; }
+.treat.cupcake .f2 { bottom: 92px; width: 86px; height: 40px; border-radius: 50%; }
+.treat.cupcake .f3 { bottom: 116px; width: 54px; height: 38px; border-radius: 50% 50% 45% 45% / 70% 70% 30% 30%; }
+.treat.cupcake .frost::before {
+  content: ""; position: absolute; inset: 8px 12px;
+  background: radial-gradient(circle, var(--sprinkle, #fff) 2px, transparent 3px) 0 0 / 16px 12px;
+}
+.treat.cupcake .cherry-sm { top: auto; bottom: 146px; z-index: 5; }
+
+/* Bebida fría */
+.treat.drink .glass {
+  position: absolute; bottom: 0; left: 50%; width: 80px; height: 130px; transform: translateX(-50%);
+  clip-path: polygon(0 0, 100% 0, 90% 100%, 10% 100%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .45) 0 14%, var(--c1) 14%, var(--c2));
+  box-shadow: inset 9px 0 0 rgba(255, 255, 255, .35);
+  z-index: 1;
+}
+.treat.drink .ice {
+  position: absolute; width: 26px; height: 26px; border-radius: 6px; z-index: 2;
+  background: rgba(255, 255, 255, .5); border: 1px solid rgba(255, 255, 255, .85);
+}
+.treat.drink .i1 { bottom: 78px; left: 36px; transform: rotate(15deg); }
+.treat.drink .i2 { bottom: 56px; left: 58px; transform: rotate(-22deg); }
+.treat.drink .slice {
+  position: absolute; top: 34px; right: 10px; width: 38px; height: 38px; border-radius: 50%; z-index: 3;
+  background: radial-gradient(circle, #fff9c4 0 8px, #ffe45c 9px 14px, #fffbe0 15px 16px, #ffcf1a 17px);
+}
+.treat.drink .straw { top: 4px; left: 44%; height: 92px; z-index: 0; }
+
+/* Bebida caliente */
+.treat.coffee .saucer {
+  position: absolute; bottom: 10px; left: 50%; width: 132px; height: 22px; transform: translateX(-50%);
+  border-radius: 50%; background: linear-gradient(180deg, #f3ece4, #d8cbbd);
+}
+.treat.coffee .mug {
+  position: absolute; bottom: 22px; left: 50%; width: 92px; height: 80px; transform: translateX(-54%);
+  border-radius: 8px 8px 32px 32px;
+  background: linear-gradient(90deg, #efe7de, #fff 40%, #e2d7ca);
+  z-index: 2;
+}
+.treat.coffee .mug::before {
+  content: ""; position: absolute; top: -9px; left: 0; right: 0; height: 20px; border-radius: 50%;
+  background: radial-gradient(ellipse, var(--c1), var(--c2)); border: 5px solid #f4eee7;
+}
+.treat.coffee .handle {
+  position: absolute; bottom: 40px; left: calc(50% + 28px); width: 36px; height: 38px;
+  border: 9px solid #e5dace; border-radius: 50%; z-index: 1;
+}
+.treat.coffee .steam {
+  position: absolute; bottom: 106px; width: 8px; height: 42px; border-radius: 8px;
+  background: linear-gradient(transparent, color-mix(in srgb, var(--ink-soft) 45%, transparent));
+  animation: steam 2.6s ease-in-out infinite;
+}
+.treat.coffee .s1 { left: 40px; }
+.treat.coffee .s2 { left: 56px; animation-delay: -.9s; height: 50px; }
+.treat.coffee .s3 { left: 72px; animation-delay: -1.7s; }
+@keyframes steam {
+  0% { transform: translateY(10px) scaleY(.6); opacity: 0; }
+  50% { opacity: .9; }
+  100% { transform: translateY(-16px) scaleY(1.1); opacity: 0; }
 }
 
 /* Foto subida desde el panel admin */

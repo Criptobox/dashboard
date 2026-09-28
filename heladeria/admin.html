@@ -26,23 +26,26 @@
     </nav>
   </header>
 
-  <!-- Supabase sin configurar -->
-  <section class="panel narrow hidden" id="setupView">
-    <h1>Conecta Supabase</h1>
-    <p>El panel necesita una base de datos. Sigue estos pasos (también están en el <code>README.md</code>):</p>
-    <ol class="steps">
-      <li>Crea un proyecto gratis en <a href="https://supabase.com" target="_blank" rel="noopener">supabase.com</a>.</li>
-      <li>En <b>SQL Editor</b> pega y ejecuta el archivo <code>supabase.sql</code> (antes cambia el correo del final por el tuyo).</li>
-      <li>En <b>Authentication → Users</b> crea tu usuario con ese mismo correo y una contraseña.</li>
-      <li>En <b>Project Settings → API</b> copia la <i>Project URL</i> y la clave <i>anon public</i> en <code>config.js</code>.</li>
-      <li>Recarga esta página.</li>
-    </ol>
+  <!-- Aviso de modo demo (sin Supabase) -->
+  <section class="demo-banner hidden" id="demoBanner">
+    <p><b>🧪 Modo demo.</b> Los cambios se guardan solo en este navegador. Para guardarlos de verdad conecta Supabase.</p>
+    <details>
+      <summary>¿Cómo conecto Supabase?</summary>
+      <ol class="steps">
+        <li>Crea un proyecto gratis en <a href="https://supabase.com" target="_blank" rel="noopener">supabase.com</a>.</li>
+        <li>En <b>SQL Editor</b> ejecuta <code>supabase.sql</code> (antes cambia el correo del final por el tuyo).</li>
+        <li>En <b>Authentication → Users</b> crea tu usuario con ese mismo correo.</li>
+        <li>En <b>Project Settings → API</b> copia la <i>Project URL</i> y la clave <i>anon public</i> en <code>config.js</code>.</li>
+      </ol>
+    </details>
+    <button class="btn-ghost hidden" id="resetDemo" type="button">Restaurar datos de ejemplo</button>
   </section>
 
   <!-- Inicio de sesión -->
   <section class="panel narrow hidden" id="loginView">
     <h1>Entrar</h1>
     <p class="muted">Solo para el personal de la heladería.</p>
+    <p class="demo-hint hidden" id="demoHint"></p>
     <form id="loginForm" class="form">
       <label>Correo <input type="email" name="email" required autocomplete="username" /></label>
       <label>Contraseña <input type="password" name="password" required autocomplete="current-password" /></label>
@@ -70,7 +73,7 @@
 
       <form id="productForm" class="form" novalidate>
         <label class="span-2">Nombre *
-          <input name="name" required maxlength="80" placeholder="Ej. Dulce de leche" />
+          <input name="name" required maxlength="80" placeholder="Ej. Tarta de queso" />
         </label>
 
         <label>Categoría
@@ -92,7 +95,7 @@
         </label>
 
         <fieldset class="span-2 colors">
-          <legend>Colores del helado</legend>
+          <legend>Colores del dibujo</legend>
           <label>Claro <input type="color" name="c1" value="#ffd1e3" /></label>
           <label>Intenso <input type="color" name="c2" value="#ff6fa8" /></label>
           <label>Virutas <input type="color" name="sprinkle" value="#ffffff" /></label>
@@ -114,7 +117,7 @@
           <legend>Opciones</legend>
           <label><input type="checkbox" name="vegan" /> Vegano</label>
           <label><input type="checkbox" name="gf" /> Sin gluten</label>
-          <label><input type="checkbox" name="fixed" /> Precio único (sin bolas)</label>
+          <label><input type="checkbox" name="fixed" /> Precio único (sin elegir bolas)</label>
           <label><input type="checkbox" name="available" checked /> Disponible</label>
         </fieldset>
 
@@ -136,22 +139,40 @@
       </form>
     </section>
 
+    <div class="stack">
+    <!-- Categorías -->
+    <section class="panel" id="catPanel">
+      <div class="panel-head">
+        <h2>Categorías <span class="count" id="catCount"></span></h2>
+      </div>
+      <form id="catForm" class="cat-form" novalidate>
+        <input name="emoji" maxlength="4" placeholder="🍰" aria-label="Emoji" class="emoji-input" />
+        <input name="name" maxlength="30" placeholder="Nueva categoría, p. ej. Tartas" aria-label="Nombre de la categoría" />
+        <input name="position" type="number" step="1" placeholder="Orden" aria-label="Orden" class="pos-input" />
+        <button class="btn-primary" type="submit" id="catSaveBtn">Añadir</button>
+        <button class="btn-ghost hidden" type="button" id="catCancel">Cancelar</button>
+      </form>
+      <p class="form-error" id="catError" role="alert"></p>
+      <ul class="cat-list" id="catList"></ul>
+    </section>
+
     <!-- Lista de productos -->
     <section class="panel" id="listPanel">
       <div class="panel-head">
-        <h2>Sabores en la carta <span class="count" id="productCount"></span></h2>
+        <h2>Productos <span class="count" id="productCount"></span></h2>
       </div>
       <div class="list-tools">
-        <input type="search" id="search" placeholder="Buscar sabor…" aria-label="Buscar sabor" />
+        <input type="search" id="search" placeholder="Buscar producto…" aria-label="Buscar producto" />
         <select id="catFilter" aria-label="Filtrar por categoría"><option value="">Todas</option></select>
       </div>
-      <p class="muted small">Usa el interruptor para <b>poner o quitar</b> un sabor de la carta sin borrarlo.</p>
+      <p class="muted small">Usa el interruptor para <b>poner o quitar</b> un producto de la carta sin borrarlo.</p>
       <ul class="product-list" id="productList"></ul>
       <div class="empty-state hidden" id="emptyState">
         <p>Todavía no hay productos en la base de datos.</p>
         <button class="btn-primary" id="importBtn" type="button">Importar la carta de ejemplo</button>
       </div>
     </section>
+    </div>
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>

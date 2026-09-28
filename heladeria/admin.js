@@ -2,11 +2,13 @@
 // Gelato Nube · Panel de administración (Supabase)
 // ==========================================================
 
-const views = { setup: $("#setupView"), login: $("#loginView"), app: $("#appView") };
+const views = { login: $("#loginView"), app: $("#appView") };
 const form = $("#productForm");
 const listEl = $("#productList");
 
 let items = [];          // productos cargados de la base de datos
+let cats = [];           // categorías
+let editingCat = null;   // slug de la categoría que se está editando
 let editingId = null;    // id del producto que se está editando
 let currentImage = "";   // URL de la foto del producto en edición
 
@@ -26,6 +28,8 @@ function toast(msg) {
 const errorText = (err) => {
   const msg = err?.message || String(err);
   if (/row-level security|permission denied|403/i.test(msg)) return "Tu usuario no tiene permisos de administrador.";
+  if (/foreign key|23503/i.test(msg) || err?.code === "23503") return "No se puede borrar: la categoría todavía tiene productos. Muévelos a otra categoría o bórralos antes.";
+  if (/duplicate key|23505/i.test(msg) || err?.code === "23505") return "Ya existe una categoría con ese nombre.";
   if (/Invalid login credentials/i.test(msg)) return "Correo o contraseña incorrectos.";
   if (/Failed to fetch|NetworkError/i.test(msg)) return "No hay conexión con Supabase.";
   return msg;
@@ -33,12 +37,14 @@ const errorText = (err) => {
 
 // ---------- Arranque ----------
 async function init() {
-  const options = (obj) => Object.entries(obj).map(([v, l]) => `<option value="${v}">${l}</option>`).join("");
-  $("#catSelect").innerHTML = options(CATEGORIES);
-  $("#typeSelect").innerHTML = options(TYPES);
-  $("#catFilter").innerHTML += options(CATEGORIES);
+  $("#typeSelect").innerHTML = Object.entries(TYPES).map(([v, l]) => `<option value="${v}">${l}</option>`).join("");
 
-  if (!DB.configured) return show("setup");
+  if (DB.mode === "demo") {
+    $("#demoBanner").classList.remove("hidden");
+    const hint = $("#demoHint");
+    hint.classList.remove("hidden");
+    hint.innerHTML = `Modo demo · correo <b>${esc(DB.demoUser.email)}</b> · contraseña <b>${esc(DB.demoUser.password)}</b>`;
+  }
 
   const user = await DB.getUser().catch(() => null);
   if (user) await enterApp(user);
@@ -56,9 +62,21 @@ async function enterApp(user) {
   }
   $("#userEmail").textContent = user.email;
   $("#logoutBtn").classList.remove("hidden");
+  $("#resetDemo").classList.toggle("hidden", DB.mode !== "demo");
   show("app");
+  await loadAll();
+}
+
+async function loadAll() {
+  listEl.innerHTML = `<li class="muted">Cargando…</li>`;
+  try {
+    [cats, items] = await Promise.all([DB.listCategories(), DB.list()]);
+  } catch (err) {
+    listEl.innerHTML = `<li class="form-error">${esc(errorText(err))}</li>`;
+    return;
+  }
+  renderCategories();
   resetForm();
-  await loadProducts();
 }
 
 // ---------- Sesión ----------
@@ -79,6 +97,13 @@ $("#loginForm").addEventListener("submit", async (e) => {
   }
 });
 
+$("#resetDemo").addEventListener("click", async () => {
+  if (!confirm("¿Borrar todos tus cambios de la demo y volver a la carta de ejemplo?")) return;
+  await DB.resetDemo();
+  await loadAll();
+  toast("🔄 Carta de ejemplo restaurada");
+});
+
 $("#logoutBtn").addEventListener("click", async () => {
   await DB.signOut();
   $("#userEmail").textContent = "";
@@ -88,15 +113,10 @@ $("#logoutBtn").addEventListener("click", async () => {
 });
 
 // ---------- Lista ----------
-async function loadProducts() {
-  listEl.innerHTML = `<li class="muted">Cargando…</li>`;
-  try {
-    items = await DB.list();
-    renderList();
-  } catch (err) {
-    listEl.innerHTML = `<li class="form-error">${esc(errorText(err))}</li>`;
-  }
-}
+const catName = (slug) => {
+  const c = cats.find((x) => x.slug === slug);
+  return c ? `${c.emoji ? c.emoji + " " : ""}${c.name}` : slug;
+};
 
 function renderList() {
   const q = $("#search").value.trim().toLowerCase();
@@ -112,7 +132,7 @@ function renderList() {
       <div class="thumb" style="${colorVars(p)}">${artHTML(p)}</div>
       <div>
         <span class="row-name">${esc(p.name)}</span>
-        <span class="row-meta">${esc(CATEGORIES[p.cat] || p.cat)} · ${euro(p.price)}${p.badge ? " · " + esc(p.badge) : ""}</span>
+        <span class="row-meta">${esc(catName(p.cat))} · ${euro(p.price)}${p.badge ? " · " + esc(p.badge) : ""}</span>
       </div>
       <label class="switch" title="Mostrar u ocultar en la carta">
         <input type="checkbox" data-action="toggle" ${p.available ? "checked" : ""} aria-label="Disponible: ${esc(p.name)}" />
@@ -162,7 +182,7 @@ listEl.addEventListener("click", async (e) => {
       await DB.remove(p.id);
       items = items.filter((x) => x.id !== p.id);
       if (editingId === p.id) resetForm();
-      renderList();
+      renderCategories();
       toast(`🗑️ ${p.name} borrado`);
     } catch (err) {
       toast(errorText(err));
@@ -178,9 +198,11 @@ $("#importBtn").addEventListener("click", async (e) => {
     .map((p, i) => ({ ...p, available: true, position: i }));
   e.target.disabled = true;
   try {
+    const have = new Set(cats.map((c) => c.slug));
+    for (const c of DEFAULT_CATEGORIES) if (!have.has(c.slug)) await DB.createCategory(c);
     await DB.createMany(toAdd);
     toast(`🍨 ${toAdd.length} productos importados`);
-    await loadProducts();
+    await loadAll();
   } catch (err) {
     toast(errorText(err));
   } finally {
@@ -218,6 +240,7 @@ function fillForm(p) {
   editingId = p.id;
   const f = form.elements;
   f.name.value = p.name;
+  if (!cats.some((c) => c.slug === p.cat)) fillCategorySelects(p.cat);
   f.cat.value = p.cat;
   f.type.value = p.type;
   f.price.value = p.price;
@@ -249,13 +272,14 @@ function fillForm(p) {
 function resetForm() {
   editingId = null;
   form.reset();
+  if (cats.length) form.elements.cat.value = cats[0].slug;
   setCurrentImage("");
   $("#formTitle").textContent = "Nuevo producto";
   $("#saveBtn").textContent = "Guardar producto";
   $("#cancelEdit").classList.add("hidden");
   $("#formError").textContent = "";
   updatePreview();
-  renderList();
+  renderCategories();
 }
 
 function setCurrentImage(url) {
@@ -282,6 +306,10 @@ function updatePreview() {
   $(".preview-name", preview).textContent = p.name || "Nombre del sabor";
   $(".preview-price", preview).textContent = euro(p.price);
 }
+// Los dulces y bebidas no llevan selector de bolas
+form.elements.type.addEventListener("change", () => {
+  if (form.elements.type.value !== "cone") form.elements.fixed.checked = true;
+});
 form.addEventListener("input", updatePreview);
 form.addEventListener("change", updatePreview);
 
@@ -292,6 +320,7 @@ form.addEventListener("submit", async (e) => {
   err.textContent = "";
 
   if (!p.name) return (err.textContent = "Escribe el nombre del producto.");
+  if (!p.cat) return (err.textContent = "Primero crea una categoría.");
   if (p.price === "" || !(Number(p.price) >= 0)) return (err.textContent = "Escribe un precio válido.");
 
   const btn = $("#saveBtn");
@@ -320,6 +349,111 @@ form.addEventListener("submit", async (e) => {
   } finally {
     btn.disabled = false;
     btn.textContent = editingId ? "Guardar cambios" : "Guardar producto";
+  }
+});
+
+// ---------- Categorías ----------
+function fillCategorySelects(extraSlug) {
+  const opts = cats.map((c) => `<option value="${esc(c.slug)}">${esc(catName(c.slug))}</option>`);
+  if (extraSlug) opts.push(`<option value="${esc(extraSlug)}">${esc(extraSlug)}</option>`);
+  const sel = form.elements.cat;
+  const prev = sel.value;
+  sel.innerHTML = opts.join("");
+  if (cats.some((c) => c.slug === prev)) sel.value = prev;
+
+  const filter = $("#catFilter");
+  const prevFilter = filter.value;
+  filter.innerHTML = `<option value="">Todas</option>` + cats.map((c) => `<option value="${esc(c.slug)}">${esc(catName(c.slug))}</option>`).join("");
+  filter.value = cats.some((c) => c.slug === prevFilter) ? prevFilter : "";
+}
+
+function renderCategories() {
+  const counts = {};
+  items.forEach((p) => { counts[p.cat] = (counts[p.cat] || 0) + 1; });
+  $("#catCount").textContent = cats.length ? `(${cats.length})` : "";
+  $("#catList").innerHTML = cats.map((c) => `
+    <li class="cat-chip ${c.slug === editingCat ? "editing" : ""}" data-slug="${esc(c.slug)}">
+      <span>${c.emoji ? esc(c.emoji) + " " : ""}<b>${esc(c.name)}</b> <small>${counts[c.slug] || 0}</small></span>
+      <button type="button" class="mini-btn" data-action="edit-cat" aria-label="Editar ${esc(c.name)}">✏️</button>
+      <button type="button" class="mini-btn" data-action="delete-cat" aria-label="Borrar ${esc(c.name)}">✕</button>
+    </li>`).join("") || `<li class="muted">Crea tu primera categoría arriba.</li>`;
+  fillCategorySelects();
+  renderList();
+}
+
+function resetCatForm() {
+  editingCat = null;
+  $("#catForm").reset();
+  $("#catSaveBtn").textContent = "Añadir";
+  $("#catCancel").classList.add("hidden");
+  $("#catError").textContent = "";
+  renderCategories();
+}
+$("#catCancel").addEventListener("click", resetCatForm);
+
+$("#catForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const f = e.target.elements;
+  const name = f.name.value.trim();
+  const errEl = $("#catError");
+  errEl.textContent = "";
+  if (!name) return (errEl.textContent = "Escribe el nombre de la categoría.");
+  const data = {
+    name,
+    emoji: f.emoji.value.trim(),
+    position: f.position.value === "" ? (editingCat ? cats.find((c) => c.slug === editingCat).position : cats.length) : f.position.value,
+  };
+  try {
+    if (editingCat) {
+      const saved = await DB.updateCategory(editingCat, data);
+      cats = cats.map((c) => (c.slug === editingCat ? saved : c));
+      toast(`💾 Categoría ${saved.name} actualizada`);
+    } else {
+      const slug = slugify(name) || `cat-${Date.now().toString(36)}`;
+      if (cats.some((c) => c.slug === slug)) return (errEl.textContent = "Ya existe una categoría con ese nombre.");
+      const saved = await DB.createCategory({ ...data, slug });
+      cats.push(saved);
+      toast(`📁 Categoría ${saved.name} creada`);
+    }
+    cats.sort((a, b) => a.position - b.position || a.name.localeCompare(b.name, "es"));
+    resetCatForm();
+  } catch (err) {
+    errEl.textContent = errorText(err);
+  }
+});
+
+$("#catList").addEventListener("click", async (e) => {
+  const btn = e.target.closest("button[data-action]");
+  if (!btn) return;
+  const c = cats.find((x) => x.slug === btn.closest("[data-slug]").dataset.slug);
+
+  if (btn.dataset.action === "edit-cat") {
+    editingCat = c.slug;
+    const f = $("#catForm").elements;
+    f.name.value = c.name;
+    f.emoji.value = c.emoji;
+    f.position.value = c.position;
+    $("#catSaveBtn").textContent = "Guardar";
+    $("#catCancel").classList.remove("hidden");
+    renderCategories();
+    f.name.focus();
+  }
+
+  if (btn.dataset.action === "delete-cat") {
+    if (items.some((p) => p.cat === c.slug)) {
+      $("#catError").textContent = errorText({ code: "23503" });
+      return;
+    }
+    if (!confirm(`¿Borrar la categoría "${c.name}"?`)) return;
+    try {
+      await DB.removeCategory(c.slug);
+      cats = cats.filter((x) => x.slug !== c.slug);
+      if (editingCat === c.slug) editingCat = null;
+      renderCategories();
+      toast(`🗑️ Categoría ${c.name} borrada`);
+    } catch (err) {
+      $("#catError").textContent = errorText(err);
+    }
   }
 });
 

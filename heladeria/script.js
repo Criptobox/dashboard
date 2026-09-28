@@ -1,7 +1,7 @@
 // ==========================================================
 // Gelato Nube · lógica de la carta pública
 // Los productos se cargan desde Supabase (ver db.js / config.js).
-// Si Supabase no está configurado se usa DEFAULT_PRODUCTS (shared.js).
+// Sin Supabase funciona en modo demo con los datos guardados en el navegador.
 // ==========================================================
 
 const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
@@ -9,6 +9,7 @@ const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").match
 
 const cardsEl = $("#cards");
 let products = [];
+let categories = [];
 let currentFilter = "todos";
 
 // ---------- Tarjetas ----------
@@ -16,7 +17,7 @@ function cardHTML(p, i) {
   const tags = p.tags
     .filter((t) => TAG_LABELS[t])
     .map((t) => `<span class="tag ${t}">${TAG_LABELS[t]}</span>`).join("");
-  const sizes = p.fixed
+  const sizes = p.fixed || p.type !== "cone"
     ? ""
     : `<div class="sizes" role="group" aria-label="Tamaño">
         ${SIZES.map((s, idx) => `<button type="button" data-size="${idx}" class="${idx === 0 ? "active" : ""}">${s.label}</button>`).join("")}
@@ -61,7 +62,19 @@ function cardHTML(p, i) {
   </article>`;
 }
 
+// Botones de categoría: solo las que tienen algún producto
+function renderFilters() {
+  const used = new Set(products.map((p) => p.cat));
+  const cats = categories.filter((c) => used.has(c.slug));
+  if (!cats.some((c) => c.slug === currentFilter)) currentFilter = "todos";
+  const chip = (slug, label) =>
+    `<button class="chip" data-filter="${esc(slug)}" role="tab" aria-selected="false">${label}</button>`;
+  $("#filters").innerHTML = chip("todos", "Todos") +
+    cats.map((c) => chip(c.slug, `${c.emoji ? esc(c.emoji) + " " : ""}${esc(c.name)}`)).join("");
+}
+
 function renderCards() {
+  renderFilters();
   cardsEl.innerHTML = products.length
     ? products.map(cardHTML).join("")
     : `<p class="menu-msg">Ahora mismo no hay productos en la carta. ¡Vuelve pronto! 🍦</p>`;
@@ -145,20 +158,19 @@ function applyFilter(f, animate = true) {
     }
   });
 }
-$$(".chip").forEach((chip) => chip.addEventListener("click", () => applyFilter(chip.dataset.filter)));
+$("#filters").addEventListener("click", (e) => {
+  const chip = e.target.closest(".chip");
+  if (chip) applyFilter(chip.dataset.filter);
+});
 
 // ---------- Carga de productos ----------
 async function loadMenu() {
-  if (!DB.configured) {
-    products = DEFAULT_PRODUCTS;
-    renderCards();
-    return;
-  }
   cardsEl.innerHTML = `<p class="menu-msg">Cargando la carta… 🍨</p>`;
   try {
-    products = await DB.list({ onlyAvailable: true });
+    [categories, products] = await Promise.all([DB.listCategories(), DB.list({ onlyAvailable: true })]);
   } catch (err) {
-    console.warn("No se pudo cargar la carta desde Supabase, se usa la carta de ejemplo.", err);
+    console.warn("No se pudo cargar la carta, se usa la carta de ejemplo.", err);
+    categories = DEFAULT_CATEGORIES;
     products = DEFAULT_PRODUCTS;
   }
   renderCards();

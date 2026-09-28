@@ -4,7 +4,7 @@
 
 // Carta de ejemplo. Se muestra si Supabase no está configurado
 // y se puede importar a la base de datos desde el panel admin.
-// type: "cone" (cucurucho), "cup" (copa) o "shake" (batido)
+// type: dibujo que se usa (ver TYPES más abajo)
 const DEFAULT_PRODUCTS = [
   {
     id: "vainilla", name: "Vainilla Bourbon", cat: "clasicos", type: "cone",
@@ -118,6 +118,80 @@ const DEFAULT_PRODUCTS = [
     ingredients: ["Matcha ceremonial", "Bebida de avena", "Helado vegano de vainilla"],
     allergens: "Avena (puede contener trazas de gluten)", kcal: 300, sugar: "30 g",
   },
+  // ---------- Dulces ----------
+  {
+    id: "donut-fresa", name: "Donut Glaseado de Fresa", cat: "dulces", type: "donut",
+    desc: "Esponjoso, frito al momento y bañado en glaseado de fresa.",
+    price: 2.2, c1: "#ffc2d6", c2: "#ff6f9c", sprinkle: "#5fd6b8",
+    tags: [], fixed: true, badge: "Nuevo",
+    ingredients: ["Harina de trigo", "Huevo", "Leche", "Glaseado de fresa", "Virutas de azúcar"],
+    allergens: "Gluten, huevo, lácteos", kcal: 290, sugar: "18 g",
+  },
+  {
+    id: "donut-choco", name: "Donut de Chocolate", cat: "dulces", type: "donut",
+    desc: "Cubierto de chocolate negro y virutas doradas.",
+    price: 2.2, c1: "#a8714d", c2: "#5e331c", sprinkle: "#ffd65c",
+    tags: [], fixed: true,
+    ingredients: ["Harina de trigo", "Huevo", "Leche", "Cobertura de chocolate"],
+    allergens: "Gluten, huevo, lácteos, soja", kcal: 310, sugar: "20 g",
+  },
+  {
+    id: "cupcake-red", name: "Cupcake Red Velvet", cat: "dulces", type: "cupcake",
+    desc: "Bizcocho aterciopelado con crema de queso.",
+    price: 3.2, c1: "#fff4ee", c2: "#f3d6c9", sprinkle: "#d0103a",
+    tags: [], fixed: true,
+    ingredients: ["Bizcocho red velvet", "Crema de queso", "Cacao", "Mantequilla"],
+    allergens: "Gluten, huevo, lácteos", kcal: 380, sugar: "32 g",
+  },
+  {
+    id: "cupcake-frambuesa", name: "Cupcake Vainilla & Frambuesa", cat: "dulces", type: "cupcake",
+    desc: "Crema de frambuesa sobre bizcocho de vainilla.",
+    price: 3.0, c1: "#ffd1e3", c2: "#ff8fb8", sprinkle: "#ffffff",
+    tags: [], fixed: true, badge: "Favorito",
+    ingredients: ["Bizcocho de vainilla", "Crema de mantequilla", "Frambuesas"],
+    allergens: "Gluten, huevo, lácteos", kcal: 350, sugar: "29 g",
+  },
+  // ---------- Bebidas ----------
+  {
+    id: "limonada", name: "Limonada Casera", cat: "bebidas", type: "drink",
+    desc: "Limón recién exprimido con hierbabuena y mucho hielo.",
+    price: 2.8, c1: "#fff7b0", c2: "#ffd84d",
+    tags: ["vegan", "gf"], fixed: true,
+    ingredients: ["Limón exprimido", "Agua", "Azúcar de caña", "Hierbabuena", "Hielo"],
+    allergens: "Ninguno", kcal: 110, sugar: "24 g",
+  },
+  {
+    id: "granizado", name: "Granizado de Frutos Rojos", cat: "bebidas", type: "drink",
+    desc: "Hielo picado con frambuesa, fresa y arándanos.",
+    price: 3.2, c1: "#ffb3c9", c2: "#d0306b",
+    tags: ["vegan", "gf"], fixed: true,
+    ingredients: ["Frambuesa", "Fresa", "Arándanos", "Hielo picado", "Azúcar"],
+    allergens: "Ninguno", kcal: 140, sugar: "28 g",
+  },
+  {
+    id: "horchata", name: "Horchata Fresquita", cat: "bebidas", type: "drink",
+    desc: "Horchata de chufa artesana con un toque de canela.",
+    price: 2.9, c1: "#fffaf0", c2: "#efe1c6",
+    tags: ["vegan", "gf"], fixed: true,
+    ingredients: ["Chufa", "Agua", "Azúcar", "Canela"],
+    allergens: "Ninguno", kcal: 180, sugar: "20 g",
+  },
+  {
+    id: "cafe", name: "Café con Leche", cat: "bebidas", type: "coffee",
+    desc: "Café de especialidad con leche cremosa.",
+    price: 1.8, c1: "#e0b98a", c2: "#8a5a33",
+    tags: ["gf"], fixed: true,
+    ingredients: ["Café arábica", "Leche entera"],
+    allergens: "Lácteos", kcal: 90, sugar: "9 g",
+  },
+  {
+    id: "chocolate-taza", name: "Chocolate a la Taza", cat: "bebidas", type: "coffee",
+    desc: "Espeso y calentito, perfecto con un donut.",
+    price: 2.9, c1: "#8a5a33", c2: "#4a2614",
+    tags: ["gf"], fixed: true, badge: "Top invierno",
+    ingredients: ["Chocolate negro", "Leche", "Almidón de maíz"],
+    allergens: "Lácteos", kcal: 320, sugar: "30 g",
+  },
 ];
 
 // Tamaños para helados en cucurucho/tarrina
@@ -130,15 +204,35 @@ const SIZES = [
 const TAG_LABELS = { vegan: "Vegano", gf: "Sin gluten" };
 
 
-const CATEGORIES = {
-  clasicos: "Clásicos",
-  frutales: "Frutales",
-  especiales: "Especiales",
-  copas: "Copas",
-  batidos: "Batidos",
+// Categorías de ejemplo (en Supabase están en la tabla "categorias")
+const DEFAULT_CATEGORIES = [
+  { slug: "clasicos", name: "Clásicos", emoji: "🍦", position: 0 },
+  { slug: "frutales", name: "Frutales", emoji: "🍓", position: 1 },
+  { slug: "especiales", name: "Especiales", emoji: "✨", position: 2 },
+  { slug: "copas", name: "Copas", emoji: "🍨", position: 3 },
+  { slug: "batidos", name: "Batidos", emoji: "🥤", position: 4 },
+  { slug: "dulces", name: "Dulces", emoji: "🍩", position: 5 },
+  { slug: "bebidas", name: "Bebidas", emoji: "☕", position: 6 },
+];
+
+// Dibujos disponibles para cada producto
+const TYPES = {
+  cone: "Cucurucho",
+  cup: "Copa",
+  shake: "Batido",
+  donut: "Donut",
+  cupcake: "Cupcake",
+  drink: "Bebida fría",
+  coffee: "Bebida caliente",
 };
 
-const TYPES = { cone: "Cucurucho", cup: "Copa", shake: "Batido" };
+// Convierte "Tartas caseras" en "tartas-caseras"
+function slugify(text) {
+  return String(text || "")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+}
 
 const $ = (sel, ctx = document) => ctx.querySelector(sel);
 const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
@@ -157,7 +251,7 @@ function safeColor(value, fallback) {
 }
 
 function safeUrl(value) {
-  return /^https?:\/\//i.test(value || "") ? value : "";
+  return /^(https?:\/\/|data:image\/(png|jpe?g|webp|gif);base64,)/i.test(value || "") ? value : "";
 }
 
 // ---------- Ilustraciones ----------
@@ -167,6 +261,18 @@ function treatHTML(p, balls = 1) {
   }
   if (p.type === "cup") {
     return `<div class="treat cup"><div class="ball"></div><div class="ball"></div><div class="ball"></div><div class="wafer"></div><div class="base"></div></div>`;
+  }
+  if (p.type === "donut") {
+    return `<div class="treat donut"><div class="ring"><div class="icing"></div></div></div>`;
+  }
+  if (p.type === "cupcake") {
+    return `<div class="treat cupcake"><div class="cherry-sm"></div><div class="frost f3"></div><div class="frost f2"></div><div class="frost f1"></div><div class="wrap"></div></div>`;
+  }
+  if (p.type === "drink") {
+    return `<div class="treat drink"><div class="straw"></div><div class="glass"></div><div class="ice i1"></div><div class="ice i2"></div><div class="slice"></div></div>`;
+  }
+  if (p.type === "coffee") {
+    return `<div class="treat coffee"><div class="steam s1"></div><div class="steam s2"></div><div class="steam s3"></div><div class="saucer"></div><div class="handle"></div><div class="mug"></div></div>`;
   }
   return `<div class="treat cone">${'<div class="ball"></div>'.repeat(balls)}<div class="base"></div></div>`;
 }
@@ -179,6 +285,17 @@ function artHTML(p, balls = 1) {
     : treatHTML(p, balls);
 }
 
+// ¿El color es claro? (para poner el "+" oscuro sobre fondos claros)
+function isLight(hex) {
+  let h = hex.slice(1);
+  if (h.length === 3) h = h.replace(/./g, "$&$&");
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
+  return 0.299 * r + 0.587 * g + 0.114 * b > 186;
+}
+
 function colorVars(p) {
-  return `--c1:${safeColor(p.c1, "#ffd1e3")};--c2:${safeColor(p.c2, "#ff6fa8")};--sprinkle:${safeColor(p.sprinkle, "#ffffff")}`;
+  const c1 = safeColor(p.c1, "#ffd1e3");
+  const c2 = safeColor(p.c2, "#ff6fa8");
+  const onC2 = isLight(c1) && isLight(c2) ? "#3b2340" : "#ffffff";
+  return `--c1:${c1};--c2:${c2};--sprinkle:${safeColor(p.sprinkle, "#ffffff")};--on-c2:${onC2}`;
 }
