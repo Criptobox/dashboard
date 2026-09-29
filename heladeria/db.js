@@ -60,6 +60,39 @@ const DB = (() => {
     };
   }
 
+  // Pedidos
+  const orderToRow = (o) => ({
+    code: o.code,
+    customer_name: o.name,
+    customer_phone: o.phone || null,
+    mode: o.mode,
+    address: o.mode === "delivery" ? o.address : null,
+    preferred_time: o.time || null,
+    payment: o.payment || null,
+    notes: o.notes || null,
+    items: o.items.map((l) => ({ name: l.name, detail: l.detail || "", qty: l.qty, unit: l.unit })),
+    subtotal: o.subtotal,
+    delivery_fee: o.deliveryFee || 0,
+    total: o.total,
+  });
+  const orderFromRow = (r) => ({
+    id: r.id,
+    code: r.code,
+    createdAt: r.created_at,
+    name: r.customer_name,
+    phone: r.customer_phone || "",
+    mode: r.mode,
+    address: r.address || "",
+    time: r.preferred_time || "",
+    payment: r.payment || "",
+    notes: r.notes || "",
+    items: r.items || [],
+    subtotal: Number(r.subtotal),
+    deliveryFee: Number(r.delivery_fee),
+    total: Number(r.total),
+    status: r.status || "nuevo",
+  });
+
   const catFromRow = (r) => ({ slug: r.slug, name: r.name, emoji: r.emoji || "", position: r.position ?? 0 });
   const catToRow = (c) => ({ slug: c.slug, name: c.name, emoji: c.emoji || null, position: Number(c.position) || 0 });
 
@@ -96,6 +129,22 @@ const DB = (() => {
       },
       async removeCategory(slug) { await run(categories().delete().eq("slug", slug)); },
 
+      async getSettings() {
+        const rows = await run(client.from("ajustes").select("data").eq("id", 1));
+        return mergeSettings(rows[0] && rows[0].data);
+      },
+      async saveSettings(settings) {
+        await run(client.from("ajustes").upsert({ id: 1, data: settings }));
+      },
+
+      // Los clientes pueden crear pedidos pero no leerlos (solo los admins)
+      async createOrder(o) { await run(client.from("pedidos").insert(orderToRow(o))); },
+      async listOrders() {
+        return (await run(client.from("pedidos").select("*").order("created_at", { ascending: false }).limit(300))).map(orderFromRow);
+      },
+      async updateOrderStatus(id, status) { await run(client.from("pedidos").update({ status }).eq("id", id)); },
+      async removeOrder(id) { await run(client.from("pedidos").delete().eq("id", id)); },
+
       async uploadImage(file) {
         const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
         const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
@@ -125,14 +174,22 @@ const DB = (() => {
 
     function seed() {
       return {
+        settings: clone(DEFAULT_SETTINGS),
+        orders: [],
         categories: clone(DEFAULT_CATEGORIES),
         products: DEFAULT_PRODUCTS.map((p, i) => ({ ...clone(p), id: uid(), available: true, position: i })),
       };
     }
+    // Se vuelve a leer siempre: la carta y el panel pueden estar abiertos a la vez
     function read() {
-      if (mem) return mem;
-      try { mem = JSON.parse(localStorage.getItem(KEY)); } catch { mem = null; }
-      if (!mem || !Array.isArray(mem.products) || !Array.isArray(mem.categories)) mem = seed();
+      let d = null;
+      try { d = JSON.parse(localStorage.getItem(KEY)); } catch { d = null; }
+      if (d && Array.isArray(d.products) && Array.isArray(d.categories)) mem = d;
+      if (!mem) {
+        mem = seed();
+        try { localStorage.setItem(KEY, JSON.stringify(mem)); } catch { /* sin almacenamiento: solo en memoria */ }
+      }
+      if (!Array.isArray(mem.orders)) mem.orders = [];
       return mem;
     }
     function write() {
@@ -215,6 +272,26 @@ const DB = (() => {
         const d = read();
         if (d.products.some((p) => p.cat === slug)) throw fkError();
         d.categories = d.categories.filter((x) => x.slug !== slug);
+        write();
+      },
+
+      async getSettings() { return mergeSettings(clone(read().settings || {})); },
+      async saveSettings(settings) { read().settings = clone(settings); write(); },
+
+      async createOrder(o) {
+        const row = { ...orderToRow(o), id: uid(), created_at: new Date().toISOString(), status: "nuevo" };
+        read().orders.unshift(row);
+        mem.orders = mem.orders.slice(0, 300);
+        write();
+      },
+      async listOrders() { return read().orders.map(orderFromRow); },
+      async updateOrderStatus(id, status) {
+        const o = read().orders.find((x) => x.id === id);
+        if (o) { o.status = status; write(); }
+      },
+      async removeOrder(id) {
+        const d = read();
+        d.orders = d.orders.filter((x) => x.id !== id);
         write();
       },
 

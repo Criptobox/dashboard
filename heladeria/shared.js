@@ -299,3 +299,137 @@ function colorVars(p) {
   const onC2 = isLight(c1) && isLight(c2) ? "#3b2340" : "#ffffff";
   return `--c1:${c1};--c2:${c2};--sprinkle:${safeColor(p.sprinkle, "#ffffff")};--on-c2:${onC2}`;
 }
+
+// ==========================================================
+// Ajustes del negocio (editables desde el panel admin → Ajustes)
+// ==========================================================
+const DAYS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0]; // lunes primero
+const PAYMENT_OPTIONS = ["Efectivo", "Tarjeta", "Bizum"];
+
+const DEFAULT_SETTINGS = {
+  businessName: "Gelato Nube",
+  tagline: "Heladería artesanal desde 1998",
+  about: "Somos una heladería familiar. Cada mañana preparamos los helados con leche fresca de granja, fruta de temporada y sin colorantes artificiales. También hacemos dulces caseros y bebidas para acompañarlos.",
+  whatsapp: "",   // con prefijo de país y sin espacios, p. ej. 34600111222
+  phone: "",
+  email: "",
+  address: "Calle del Barquillo 12, Madrid",
+  mapsUrl: "",
+  instagram: "",
+  facebook: "",
+  tiktok: "",
+  announcement: "🚚 Envío gratis en pedidos desde 20 €",
+  delivery: { enabled: true, fee: 2.5, freeFrom: 20, minOrder: 8, zone: "Centro de la ciudad (hasta 3 km)", eta: "30-45 min" },
+  pickup: { enabled: true, eta: "15 min" },
+  payments: ["Efectivo", "Tarjeta", "Bizum"],
+  // índice = día de la semana (0 domingo … 6 sábado). "00:00" como cierre = medianoche
+  hours: [
+    { closed: false, open: "11:00", close: "00:00" },
+    { closed: false, open: "12:00", close: "22:00" },
+    { closed: false, open: "12:00", close: "22:00" },
+    { closed: false, open: "12:00", close: "22:00" },
+    { closed: false, open: "12:00", close: "22:00" },
+    { closed: false, open: "11:00", close: "00:00" },
+    { closed: false, open: "11:00", close: "00:00" },
+  ],
+};
+
+// Combina los ajustes guardados con los de por defecto (por si faltan campos nuevos)
+function mergeSettings(saved) {
+  const s = saved && typeof saved === "object" ? saved : {};
+  const base = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+  const out = { ...base, ...s };
+  out.delivery = { ...base.delivery, ...(s.delivery || {}) };
+  out.pickup = { ...base.pickup, ...(s.pickup || {}) };
+  out.payments = Array.isArray(s.payments) ? s.payments : base.payments;
+  out.hours = base.hours.map((d, i) => ({ ...d, ...((Array.isArray(s.hours) && s.hours[i]) || {}) }));
+  return out;
+}
+
+// Deja solo los dígitos: "+34 600 11 22 33" → "34600112233"
+function normalizePhone(value) {
+  return String(value || "").replace(/\D/g, "").replace(/^00/, "");
+}
+
+// Enlace de WhatsApp. Sin número abre WhatsApp para elegir el contacto.
+function waLink(number, text) {
+  const n = normalizePhone(number);
+  return `https://wa.me/${n}${text ? `?text=${encodeURIComponent(text)}` : ""}`;
+}
+
+// ---------- Horario: ¿está abierto ahora? ----------
+const toMinutes = (t) => {
+  const [h, m] = String(t || "0:0").split(":").map(Number);
+  return (h || 0) * 60 + (m || 0);
+};
+
+function dayRange(day) {
+  if (!day || day.closed) return null;
+  const open = toMinutes(day.open);
+  let close = toMinutes(day.close);
+  if (close <= open) close += 1440; // cierra después de medianoche
+  return [open, close];
+}
+
+const hhmm = (mins) => `${String(Math.floor((mins % 1440) / 60)).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")}`;
+
+function openStatus(hours, now = new Date()) {
+  const dow = now.getDay();
+  const mins = now.getHours() * 60 + now.getMinutes();
+  const today = dayRange(hours[dow]);
+  const yesterday = dayRange(hours[(dow + 6) % 7]);
+
+  if (yesterday && yesterday[1] > 1440 && mins < yesterday[1] - 1440) {
+    return { open: true, label: `Abierto ahora · cierra a las ${hhmm(yesterday[1])}` };
+  }
+  if (today && mins >= today[0] && mins < today[1]) {
+    return { open: true, label: `Abierto ahora · cierra a las ${hhmm(today[1])}` };
+  }
+  if (today && mins < today[0]) return { open: false, label: `Cerrado · abre hoy a las ${hhmm(today[0])}` };
+  for (let i = 1; i <= 7; i++) {
+    const d = (dow + i) % 7;
+    const r = dayRange(hours[d]);
+    if (r) {
+      const when = i === 1 ? "mañana" : `el ${DAYS[d].toLowerCase()}`;
+      return { open: false, label: `Cerrado · abre ${when} a las ${hhmm(r[0])}` };
+    }
+  }
+  return { open: false, label: "Cerrado temporalmente" };
+}
+
+function hoursText(day) {
+  if (!day || day.closed) return "Cerrado";
+  return `${day.open} – ${day.close === "00:00" ? "00:00" : day.close}`;
+}
+
+// Código corto para identificar el pedido: p. ej. "GN-4K7Q"
+function orderCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return `GN-${code}`;
+}
+
+// Texto del pedido que se envía por WhatsApp
+function orderMessage(order, settings) {
+  const lines = order.items.map((l) =>
+    `• ${l.qty} x ${l.name}${l.detail ? ` (${l.detail})` : ""} — ${euro(l.qty * l.unit)}`);
+  const out = [
+    `¡Hola ${settings.businessName}! 👋 Quiero hacer un pedido:`,
+    "",
+    ...lines,
+    "",
+    `Subtotal: ${euro(order.subtotal)}`,
+  ];
+  if (order.mode === "delivery") out.push(`Envío: ${order.deliveryFee ? euro(order.deliveryFee) : "gratis"}`);
+  out.push(`*Total: ${euro(order.total)}*`, "");
+  out.push(`👤 Nombre: ${order.name}`);
+  if (order.phone) out.push(`📞 Teléfono: ${order.phone}`);
+  out.push(order.mode === "delivery" ? `🚚 A domicilio: ${order.address}` : "🏪 Recojo en tienda");
+  out.push(`🕒 Hora: ${order.time || "Lo antes posible"}`);
+  if (order.payment) out.push(`💳 Pago: ${order.payment}`);
+  if (order.notes) out.push(`📝 Notas: ${order.notes}`);
+  out.push("", `Pedido ${order.code}`);
+  return out.join("\n");
+}

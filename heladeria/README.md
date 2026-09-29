@@ -4,37 +4,62 @@ Web estática (HTML + CSS + JavaScript) con la carta de una heladería artesanal
 
 ## Características
 
-**Carta pública (`index.html`)**
-- Tarjetas que flotan y se inclinan en 3D siguiendo el ratón, con brillo dinámico.
-- Al tocar una tarjeta gira y muestra ingredientes, alérgenos y calorías.
-- Ilustraciones hechas solo con CSS (cucurucho, copa, batido, donut, cupcake, bebida fría y taza caliente), o la foto que subas.
-- Filtros que se crean solos con las categorías que tengan productos, selector de 1-3 bolas en los helados y mini pedido con total.
-- Modo oscuro automático, diseño adaptable a móvil y respeto a "reducir movimiento".
+**Web pública (`index.html`)**
+- **Pedidos por WhatsApp**: el cliente llena el carrito, elige *a domicilio* o *recoger en tienda*, hora, forma de pago y notas, y se abre WhatsApp con el pedido ya escrito (productos, total, envío y código de pedido).
+- Calcula el coste de envío, el envío gratis a partir de un importe y el pedido mínimo.
+- Recuerda el carrito y los datos del cliente en su navegador.
+- Horario con aviso **Abierto ahora / Cerrado** en directo (también si cierras después de medianoche).
+- Tarjetas 3D flotantes que se inclinan con el ratón y giran para mostrar ingredientes, alérgenos y calorías.
+- Buscador y filtros por categoría. Dibujos hechos solo con CSS o la foto que subas.
+- Secciones: inicio, carta, cómo pedir, sobre nosotros, horario y envíos, preguntas frecuentes, contacto y redes.
+- Botón flotante de WhatsApp, botón de volver arriba, menú para móvil y aviso en la barra superior.
+- SEO: descripción, vista previa al compartir (Open Graph), datos estructurados de negocio local para Google, `robots.txt` y `sitemap.xml`.
+- Favicon, iconos para móvil y `manifest.webmanifest` (se puede añadir a la pantalla de inicio).
+- Página 404 propia y página legal (`legal.html`) con aviso legal, privacidad y cookies.
+- Accesible (enlace para saltar a la carta, foco visible, etiquetas), modo oscuro automático y respeto a "reducir movimiento".
 
 **Panel admin (`admin.html`)**
-- Acceso con correo y contraseña (Supabase Auth). Solo entran los correos de la tabla `admins`.
-- **Categorías**: crear (con emoji y orden), renombrar y borrar. No deja borrar una categoría que todavía tenga productos.
-- Crear y editar productos: nombre, categoría, dibujo, precio, colores, foto, ingredientes, alérgenos…
-- **Interruptor "Disponible"** para poner o quitar un producto de la carta sin borrarlo.
-- Borrar productos, buscar y filtrar por categoría.
-- Vista previa en vivo del dibujo del helado.
-- Botón para importar la carta de ejemplo la primera vez.
+- **Carta**: categorías (crear, renombrar, ordenar, borrar) y productos (crear, editar, foto, ocultar/mostrar con un interruptor, borrar).
+- **Pedidos**: copia de cada pedido enviado desde la web, con estados (nuevo, preparando, listo, entregado, cancelado), resumen de pedidos y ventas de hoy, aviso de pedidos nuevos, botón para responder al cliente por WhatsApp y actualización automática cada 30 segundos.
+- **Ajustes**: número de WhatsApp (con botón de prueba), nombre, eslogan, dirección, enlace de Maps, teléfono, email, texto "Sobre nosotros", aviso superior, envío a domicilio y recogida (coste, gratis desde, mínimo, zona, tiempos), formas de pago, horario de cada día y redes sociales.
 
 ## Estructura
 
 ```
 heladeria/
-├── index.html     # Carta pública
-├── admin.html     # Panel de administración
-├── styles.css     # Estilos y efectos 3D
-├── admin.css      # Estilos del panel
-├── config.js      # ← Aquí van la URL y la clave de Supabase
-├── shared.js      # Carta y categorías de ejemplo, dibujos y utilidades
-├── db.js          # Datos: Supabase o modo demo
-├── script.js      # Lógica de la carta
-├── admin.js       # Lógica del panel
-└── supabase.sql   # Tablas y permisos para Supabase
+├── index.html            # Web pública
+├── admin.html            # Panel de administración
+├── legal.html            # Aviso legal, privacidad y cookies
+├── 404.html              # Página de "no encontrado"
+├── styles.css / admin.css
+├── config.js             # ← Aquí van la URL y la clave de Supabase
+├── shared.js             # Carta de ejemplo, ajustes por defecto, horario y mensaje de WhatsApp
+├── db.js                 # Datos: Supabase o modo demo
+├── script.js             # Lógica de la web pública
+├── admin.js              # Lógica del panel
+├── supabase.sql          # Tablas y permisos para Supabase
+├── icon.svg, icon-180.png, icon-512.png, manifest.webmanifest
+├── og-image.jpg          # Imagen al compartir el enlace
+├── robots.txt, sitemap.xml
+└── README.md
 ```
+
+## Primeros pasos
+
+1. Entra en `admin.html` → **Ajustes** y pon tu **número de WhatsApp** con el prefijo del país (por ejemplo `34600111222`).
+   Pulsa *Enviarme un mensaje de prueba* para comprobarlo.
+2. Rellena dirección, teléfono, email, horario, envíos, formas de pago y redes.
+3. Revisa la carta en la pestaña **Carta**.
+4. Completa los datos en amarillo de `legal.html` (titular y NIF).
+
+## Cómo funcionan los pedidos por WhatsApp
+
+1. El cliente añade productos y abre el carrito.
+2. Elige envío o recogida, escribe sus datos y pulsa **Enviar pedido por WhatsApp**.
+3. Se abre WhatsApp (app o web) con el mensaje escrito y dirigido a tu número. El cliente solo tiene que pulsar enviar.
+4. A la vez se guarda una copia en la pestaña **Pedidos** del panel, con un código (p. ej. `GN-4K7Q`) que también aparece en el mensaje.
+
+Si no pones número, WhatsApp pedirá al cliente que elija a quién enviarlo.
 
 ## Modo demo (sin Supabase)
 
@@ -50,7 +75,7 @@ Para una carta real, que vean todos tus clientes, conecta Supabase:
 
 1. Crea un proyecto gratis en [supabase.com](https://supabase.com).
 2. Abre `supabase.sql`, cambia `tu-correo@ejemplo.com` (al final) por tu correo, y pégalo en **SQL Editor → Run**.
-   Crea las tablas `categorias`, `productos` y `admins`, el bucket de fotos y los permisos.
+   Crea las tablas `categorias`, `productos`, `ajustes`, `pedidos` y `admins`, el bucket de fotos y los permisos.
    Si ya lo habías ejecutado con una versión anterior, vuelve a ejecutarlo: se actualiza sin perder datos.
 3. En **Authentication → Users → Add user** crea tu usuario con ese mismo correo y una contraseña
    (marca *Auto Confirm User*).
@@ -70,9 +95,19 @@ Para añadir otro administrador: crea su usuario en Authentication y ejecuta
 Abre `index.html` en el navegador. Para el panel admin es mejor usar un servidor local,
 por ejemplo `npx serve .` o la extensión *Live Server* de VS Code.
 
+## Antes de publicar (SEO)
+
+Cambia `TU-USUARIO` y `TU-REPOSITORIO` en `robots.txt` y `sitemap.xml`, y pon la dirección completa
+de la imagen en `index.html` (`og:image`, por ejemplo `https://tu-usuario.github.io/tu-repo/og-image.jpg`)
+para que la vista previa salga al compartir el enlace por WhatsApp o redes.
+
 ## Publicar en GitHub Pages
 
-1. Sube la carpeta a un repositorio de GitHub.
-2. Ve a **Settings → Pages**.
-3. En *Source* elige la rama `main` y la carpeta donde esté `index.html`.
-4. La carta quedará en `https://<tu-usuario>.github.io/<repositorio>/` y el panel en `.../admin.html`.
+GitHub Pages solo publica desde la raíz del repositorio o desde la carpeta `/docs`, así que:
+
+1. Crea un repositorio nuevo (por ejemplo `heladeria`).
+2. Sube **el contenido** de esta carpeta (`index.html`, `admin.html`, `styles.css`…) a la raíz del repositorio.
+3. Ve a **Settings → Pages**, en *Source* elige **Deploy from a branch**, rama `main` y carpeta `/ (root)`.
+4. En uno o dos minutos la web estará en `https://<tu-usuario>.github.io/<repositorio>/`
+   y el panel en `https://<tu-usuario>.github.io/<repositorio>/admin.html`.
+5. La página `404.html` se usa automáticamente cuando alguien entra en una dirección que no existe.

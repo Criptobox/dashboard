@@ -2,40 +2,78 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Gelato Nube · Carta de Helados</title>
-  <meta name="description" content="Carta de la heladería artesanal Gelato Nube: helados, copas, batidos, dulces y bebidas." />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Gelato Nube · Heladería artesanal</title>
+  <meta name="description" content="Heladería artesanal Gelato Nube: helados, copas, batidos, dulces y bebidas. Mira la carta y haz tu pedido por WhatsApp a domicilio o para recoger." />
+  <meta name="theme-color" content="#ff6fa8" />
+  <meta name="robots" content="index, follow" />
+
+  <!-- Vista previa al compartir el enlace (cambia og:image y og:url por la dirección completa de tu web) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="es_ES" />
+  <meta property="og:site_name" content="Gelato Nube" />
+  <meta property="og:title" content="Gelato Nube · Heladería artesanal" />
+  <meta property="og:description" content="Helados, dulces y bebidas hechos cada día. Pide por WhatsApp a domicilio o para recoger." />
+  <meta property="og:image" content="og-image.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <a class="skip-link" href="#carta">Saltar a la carta</a>
+
   <!-- Burbujas de fondo -->
   <div class="bg-blobs" aria-hidden="true">
     <span></span><span></span><span></span><span></span>
   </div>
 
+  <div class="announce" id="announce" hidden></div>
+
   <header class="topbar">
-    <a class="brand" href="#">
+    <a class="brand" href="#inicio" aria-label="Inicio">
       <span class="brand-icon" aria-hidden="true">🍦</span>
-      <span>Gelato <strong>Nube</strong></span>
+      <span class="brand-name" id="brandName">Gelato <strong>Nube</strong></span>
     </a>
-    <nav class="nav">
+    <nav class="nav" id="mainNav" aria-label="Principal">
       <a href="#carta">Carta</a>
-      <a href="#info">Horario</a>
-      <button class="cart-btn" id="cartBtn" aria-label="Ver mi pedido">
+      <a href="#como-pedir">Cómo pedir</a>
+      <a href="#nosotros">Nosotros</a>
+      <a href="#horario">Horario</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+    <div class="top-actions">
+      <span class="status-pill" id="statusPill" hidden></span>
+      <button class="cart-btn" id="cartBtn" type="button" aria-label="Ver mi pedido">
         🛒 <span class="cart-count" id="cartCount">0</span>
       </button>
-    </nav>
+      <button class="menu-btn" id="menuBtn" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
   </header>
 
-  <section class="hero">
+  <section class="hero" id="inicio">
     <div class="hero-text">
-      <p class="eyebrow">Heladería artesanal desde 1998</p>
+      <p class="eyebrow" id="tagline">Heladería artesanal desde 1998</p>
       <h1>Helados que <span class="gradient-text">flotan</span> de sabor</h1>
-      <p class="lead">Helados, dulces y bebidas elaborados cada mañana con leche fresca, fruta de temporada y mucho cariño. Pasa el ratón sobre las tarjetas y toca una para ver sus ingredientes.</p>
-      <a href="#carta" class="btn-primary">Ver la carta ↓</a>
+      <p class="lead">Helados, dulces y bebidas elaborados cada mañana con leche fresca y fruta de temporada. Elige lo que te apetezca y envíanos el pedido por WhatsApp.</p>
+      <div class="hero-actions">
+        <a href="#carta" class="btn-primary">Ver la carta</a>
+        <a href="#" class="btn-wa" id="heroWa" target="_blank" rel="noopener">
+          <svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#wa-logo" /></svg>
+          Escríbenos
+        </a>
+      </div>
+      <ul class="hero-facts" id="heroFacts"></ul>
     </div>
 
     <div class="hero-scene" aria-hidden="true">
@@ -50,51 +88,201 @@
     </div>
   </section>
 
-  <main id="carta" class="menu">
-    <h2 class="section-title">Nuestra carta</h2>
+  <main>
+    <section id="carta" class="menu" aria-labelledby="cartaTitle">
+      <h2 class="section-title" id="cartaTitle">Nuestra carta</h2>
+      <p class="section-sub">Toca una tarjeta para ver ingredientes y alérgenos. Pulsa <b>+</b> para añadirla a tu pedido.</p>
 
-    <div class="filters" id="filters" role="tablist" aria-label="Categorías"></div>
+      <div class="menu-tools">
+        <label class="search">
+          <span class="sr-only">Buscar en la carta</span>
+          <input type="search" id="menuSearch" placeholder="Buscar: chocolate, vegano, café…" autocomplete="off" />
+        </label>
+      </div>
+      <div class="filters" id="filters" role="tablist" aria-label="Categorías"></div>
 
-    <div class="cards" id="cards"></div>
+      <div class="cards" id="cards"></div>
+      <p class="menu-msg" id="noResults" hidden>No hay nada con ese nombre. Prueba con otra palabra 🍦</p>
+    </section>
+
+    <section id="como-pedir" class="section" aria-labelledby="pedirTitle">
+      <h2 class="section-title" id="pedirTitle">Cómo pedir</h2>
+      <ol class="steps-row">
+        <li class="step-card float-slow">
+          <span class="step-num">1</span>
+          <h3>Elige</h3>
+          <p>Añade helados, dulces y bebidas con el botón <b>+</b>. En los helados puedes elegir 1, 2 o 3 bolas.</p>
+        </li>
+        <li class="step-card float-slow delay">
+          <span class="step-num">2</span>
+          <h3>Completa tus datos</h3>
+          <p>Abre el carrito 🛒, elige envío a domicilio o recogida en tienda, la hora y cómo vas a pagar.</p>
+        </li>
+        <li class="step-card float-slow delay2">
+          <span class="step-num">3</span>
+          <h3>Envía por WhatsApp</h3>
+          <p>Se abre WhatsApp con el pedido ya escrito. Solo tienes que enviarlo y te confirmamos enseguida.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section id="nosotros" class="section about" aria-labelledby="aboutTitle">
+      <div class="about-text">
+        <h2 class="section-title left" id="aboutTitle">Sobre nosotros</h2>
+        <p id="aboutText"></p>
+      </div>
+      <ul class="about-facts">
+        <li class="fact float-slow"><span aria-hidden="true">🥛</span><b>Leche fresca</b><small>de granja, cada mañana</small></li>
+        <li class="fact float-slow delay"><span aria-hidden="true">🍓</span><b>Fruta de temporada</b><small>en todos los sorbetes</small></li>
+        <li class="fact float-slow delay2"><span aria-hidden="true">🌱</span><b>Opciones veganas</b><small>y sin gluten</small></li>
+      </ul>
+    </section>
+
+    <section id="horario" class="section info" aria-labelledby="horarioTitle">
+      <h2 class="sr-only" id="horarioTitle">Horario, envíos y ubicación</h2>
+      <div class="info-card float-slow">
+        <h3>🕒 Horario</h3>
+        <p class="status-line" id="statusLine"></p>
+        <table class="hours" id="hoursTable"></table>
+      </div>
+      <div class="info-card float-slow delay" id="deliveryCard">
+        <h3>🚚 Envíos y recogida</h3>
+        <ul class="info-list" id="deliveryInfo"></ul>
+        <p class="pay-row" id="payInfo"></p>
+      </div>
+      <div class="info-card float-slow delay2">
+        <h3>📍 Dónde estamos</h3>
+        <p id="addressText"></p>
+        <a class="btn-ghost-link" id="mapsLink" href="#" target="_blank" rel="noopener">Cómo llegar ↗</a>
+        <p class="tags-row"><span class="tag vegan">Vegano</span> <span class="tag gf">Sin gluten</span></p>
+        <p class="muted-sm">Pregúntanos por los alérgenos de cualquier producto.</p>
+      </div>
+    </section>
+
+    <section id="faq" class="section faq" aria-labelledby="faqTitle">
+      <h2 class="section-title" id="faqTitle">Preguntas frecuentes</h2>
+      <div class="faq-list" id="faqList"></div>
+    </section>
+
+    <section id="contacto" class="section contact" aria-labelledby="contactTitle">
+      <div class="contact-card">
+        <h2 class="section-title left" id="contactTitle">¿Hablamos?</h2>
+        <p>Para pedidos o cualquier duda, escríbenos por WhatsApp y te respondemos lo antes posible.</p>
+        <a href="#" class="btn-wa big" id="contactWa" target="_blank" rel="noopener">
+          <svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#wa-logo" /></svg>
+          Abrir WhatsApp
+        </a>
+        <ul class="contact-list" id="contactList"></ul>
+        <div class="socials" id="socials"></div>
+      </div>
+    </section>
   </main>
 
-  <section id="info" class="info">
-    <div class="info-card float-slow">
-      <h3>🕒 Horario</h3>
-      <p>Lunes a jueves: 12:00 – 22:00</p>
-      <p>Viernes a domingo: 11:00 – 00:00</p>
-    </div>
-    <div class="info-card float-slow delay">
-      <h3>📍 Dónde estamos</h3>
-      <p>Calle del Barquillo 12</p>
-      <p>Tel. 600 123 456</p>
-    </div>
-    <div class="info-card float-slow delay2">
-      <h3>🌱 Opciones</h3>
-      <p><span class="tag vegan">Vegano</span> <span class="tag gf">Sin gluten</span></p>
-      <p>Pregúntanos por alérgenos</p>
-    </div>
-  </section>
-
   <footer class="footer">
-    <p>© <span id="year"></span> Gelato Nube · Hecho con 🍨 y código · <a href="admin.html" class="admin-link">Admin</a></p>
+    <div class="footer-grid">
+      <div>
+        <p class="footer-brand" id="footerName">Gelato Nube</p>
+        <p class="muted-sm" id="footerTagline"></p>
+      </div>
+      <nav aria-label="Secciones">
+        <p class="footer-title">La web</p>
+        <a href="#carta">Carta</a>
+        <a href="#como-pedir">Cómo pedir</a>
+        <a href="#horario">Horario</a>
+        <a href="#faq">Preguntas frecuentes</a>
+      </nav>
+      <nav aria-label="Legal">
+        <p class="footer-title">Legal</p>
+        <a href="legal.html#aviso-legal">Aviso legal</a>
+        <a href="legal.html#privacidad">Privacidad</a>
+        <a href="legal.html#cookies">Cookies</a>
+        <a href="admin.html" class="admin-link">Acceso admin</a>
+      </nav>
+    </div>
+    <p class="copy">© <span id="year"></span> <span id="copyName">Gelato Nube</span> · Hecho con 🍨 y código</p>
   </footer>
 
-  <!-- Panel de pedido -->
-  <aside class="drawer" id="drawer" aria-hidden="true">
+  <!-- Botones flotantes -->
+  <a href="#" class="wa-fab" id="waFab" target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp">
+    <svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#wa-logo" /></svg>
+  </a>
+  <button class="to-top" id="toTop" type="button" aria-label="Volver arriba" hidden>↑</button>
+
+  <!-- Carrito y pedido -->
+  <aside class="drawer" id="drawer" aria-hidden="true" aria-labelledby="drawerTitle" role="dialog">
     <div class="drawer-head">
-      <h3>Mi pedido</h3>
-      <button class="close" id="closeDrawer" aria-label="Cerrar">✕</button>
+      <h3 id="drawerTitle">Mi pedido</h3>
+      <button class="close" id="closeDrawer" type="button" aria-label="Cerrar">✕</button>
     </div>
-    <ul class="order-list" id="orderList"></ul>
-    <div class="drawer-foot">
-      <p class="total">Total: <strong id="orderTotal">0,00 €</strong></p>
-      <button class="btn-primary full" id="clearOrder">Vaciar pedido</button>
+
+    <div class="drawer-body" id="cartView">
+      <ul class="order-list" id="orderList"></ul>
+
+      <form class="checkout" id="checkout" novalidate hidden>
+        <p class="closed-note" id="closedNote" hidden></p>
+
+        <fieldset class="mode-pick" id="modePick">
+          <legend>¿Cómo lo quieres?</legend>
+          <label id="modeDeliveryLabel"><input type="radio" name="mode" value="delivery" checked /> <span>🚚 A domicilio</span></label>
+          <label id="modePickupLabel"><input type="radio" name="mode" value="pickup" /> <span>🏪 Recoger</span></label>
+        </fieldset>
+        <p class="hint-line" id="modeHint"></p>
+
+        <label>Nombre *
+          <input name="name" id="cName" maxlength="80" autocomplete="name" required />
+        </label>
+        <label>Teléfono
+          <input name="phone" id="cPhone" type="tel" maxlength="30" autocomplete="tel" placeholder="Opcional" />
+        </label>
+        <label id="addressField">Dirección de entrega *
+          <textarea name="address" id="cAddress" rows="2" maxlength="200" autocomplete="street-address" placeholder="Calle, número, piso y puerta"></textarea>
+        </label>
+        <div class="two-col">
+          <label>Hora
+            <input name="time" id="cTime" type="time" />
+            <small>Vacío = lo antes posible</small>
+          </label>
+          <label id="paymentField">Pago
+            <select name="payment" id="cPayment"></select>
+          </label>
+        </div>
+        <label>Notas
+          <textarea name="notes" id="cNotes" rows="2" maxlength="500" placeholder="Alergias, timbre, sin nueces…"></textarea>
+        </label>
+        <p class="form-errors" id="checkoutErrors" role="alert"></p>
+      </form>
+    </div>
+
+    <div class="drawer-body done-view" id="doneView" hidden>
+      <div class="done-icon" aria-hidden="true">🎉</div>
+      <h4>¡Pedido listo para enviar!</h4>
+      <p>Se ha abierto WhatsApp con tu pedido <b id="doneCode"></b>. Pulsa <b>enviar</b> en WhatsApp y te confirmamos enseguida.</p>
+      <a class="btn-wa full" id="doneWa" href="#" target="_blank" rel="noopener">
+        <svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#wa-logo" /></svg>
+        No se abrió, abrir otra vez
+      </a>
+      <button class="btn-ghost full" id="newOrder" type="button">Hacer otro pedido</button>
+    </div>
+
+    <div class="drawer-foot" id="drawerFoot">
+      <dl class="totals" id="totals"></dl>
+      <a class="btn-wa full" id="sendOrder" href="#" target="_blank" rel="noopener">
+        <svg class="wa-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#wa-logo" /></svg>
+        Enviar pedido por WhatsApp
+      </a>
+      <button class="btn-link" id="clearOrder" type="button">Vaciar pedido</button>
     </div>
   </aside>
   <div class="overlay" id="overlay"></div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- Logo de WhatsApp reutilizable -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="wa-logo" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.21c5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2Zm0 18.15c-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.24 8.24 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.25-8.24 4.54 0 8.24 3.7 8.24 8.24 0 4.55-3.7 8.24-8.24 8.24Zm4.52-6.16c-.25-.12-1.47-.72-1.7-.8-.23-.09-.39-.12-.56.12-.17.25-.64.8-.78.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.13-.14.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.23.25-.86.85-.86 2.07 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.14-1.18-.06-.1-.22-.16-.47-.29Z"/>
+    </symbol>
+  </svg>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>

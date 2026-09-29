@@ -9,6 +9,9 @@ const listEl = $("#productList");
 let items = [];          // productos cargados de la base de datos
 let cats = [];           // categorías
 let editingCat = null;   // slug de la categoría que se está editando
+let settings = mergeSettings(null);
+let orders = [];
+let knownOrderIds = null; // para avisar de pedidos nuevos
 let editingId = null;    // id del producto que se está editando
 let currentImage = "";   // URL de la foto del producto en edición
 
@@ -107,6 +110,7 @@ async function loadAll() {
   }
   renderCategories();
   resetForm();
+  await Promise.all([loadSettings(), loadOrders()]);
 }
 
 // ---------- Sesión ----------
@@ -139,6 +143,8 @@ $("#logoutBtn").addEventListener("click", async () => {
   $("#userEmail").textContent = "";
   $("#logoutBtn").classList.add("hidden");
   items = [];
+  orders = [];
+  knownOrderIds = null;
   show("login");
 });
 
@@ -486,5 +492,273 @@ $("#catList").addEventListener("click", async (e) => {
     }
   }
 });
+
+// ==========================================================
+// Pestañas
+// ==========================================================
+const TAB_KEY = "gelato-nube-admin-tab";
+function setTab(name) {
+  $$(".tab").forEach((t) => t.setAttribute("aria-selected", t.dataset.tab === name));
+  $$(".tab-panel").forEach((p) => { p.hidden = p.id !== `tab-${name}`; });
+  try { localStorage.setItem(TAB_KEY, name); } catch { /* sin almacenamiento */ }
+  if (name === "pedidos") loadOrders();
+}
+$$(".tab").forEach((t) => t.addEventListener("click", () => setTab(t.dataset.tab)));
+try { setTab(localStorage.getItem(TAB_KEY) || "carta"); } catch { setTab("carta"); }
+
+// ==========================================================
+// Pedidos
+// ==========================================================
+const STATUSES = {
+  nuevo: "🆕 Nuevo",
+  preparando: "👩‍🍳 Preparando",
+  listo: "✅ Listo",
+  entregado: "📦 Entregado",
+  cancelado: "✖️ Cancelado",
+};
+
+async function loadOrders({ silent = false } = {}) {
+  if ($("#appView").classList.contains("hidden")) return;
+  try {
+    orders = await DB.listOrders();
+  } catch (err) {
+    if (!silent) $("#ordersList").innerHTML = `<li class="form-error">${esc(errorText(err))}</li>`;
+    return;
+  }
+  const ids = new Set(orders.map((o) => o.id));
+  if (knownOrderIds) {
+    const fresh = orders.filter((o) => !knownOrderIds.has(o.id));
+    if (fresh.length) toast(`🔔 ${fresh.length === 1 ? "Nuevo pedido" : `${fresh.length} pedidos nuevos`}: ${fresh.map((o) => o.name).join(", ")}`);
+  }
+  knownOrderIds = ids;
+  renderOrders();
+}
+
+$("#refreshOrders").addEventListener("click", () => loadOrders());
+$("#orderFilter").addEventListener("change", renderOrders);
+setInterval(() => { if (!document.hidden) loadOrders({ silent: true }); }, 30000);
+
+const isToday = (iso) => new Date(iso).toDateString() === new Date().toDateString();
+const fmtDate = (iso) => new Date(iso).toLocaleString("es-ES", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+
+// Número del cliente para WhatsApp: si no trae prefijo, usa el del negocio
+function customerWa(phone) {
+  let n = normalizePhone(phone);
+  const shop = normalizePhone(settings.whatsapp);
+  if (n && n.length <= 9 && shop.length > 9) n = shop.slice(0, shop.length - 9) + n;
+  return n;
+}
+
+function renderOrders() {
+  const active = orders.filter((o) => o.status !== "cancelado");
+  const today = active.filter((o) => isToday(o.createdAt));
+  const pending = orders.filter((o) => o.status === "nuevo" || o.status === "preparando");
+  const newCount = orders.filter((o) => o.status === "nuevo").length;
+  $("#orderStats").innerHTML = `
+    <div class="stat"><span>Pedidos hoy</span><b>${today.length}</b></div>
+    <div class="stat"><span>Ventas hoy</span><b>${euro(today.reduce((s, o) => s + o.total, 0))}</b></div>
+    <div class="stat ${pending.length ? "attention" : ""}"><span>Por preparar</span><b>${pending.length}</b></div>
+    <div class="stat"><span>Total guardados</span><b>${orders.length}</b></div>`;
+  const badge = $("#newOrdersBadge");
+  badge.hidden = !newCount;
+  badge.textContent = newCount;
+
+  const filter = $("#orderFilter").value;
+  const list = orders.filter((o) => !filter || o.status === filter);
+  $("#ordersList").innerHTML = list.map((o) => {
+    const reply = o.phone
+      ? `<a class="btn-ghost" href="${esc(waLink(customerWa(o.phone), `Hola ${o.name}, hemos recibido tu pedido ${o.code} en ${settings.businessName}. ¡Gracias!`))}" target="_blank" rel="noopener">💬 Responder</a>`
+      : "";
+    return `
+    <li class="order-card st-${esc(o.status)}" data-id="${esc(o.id)}">
+      <div class="order-head">
+        <div><b class="order-code">${esc(o.code)}</b> <span class="muted">${esc(fmtDate(o.createdAt))}</span></div>
+        <select data-action="status" aria-label="Estado del pedido ${esc(o.code)}">
+          ${Object.entries(STATUSES).map(([k, l]) => `<option value="${k}" ${k === o.status ? "selected" : ""}>${l}</option>`).join("")}
+        </select>
+      </div>
+      <div class="order-body">
+        <p><b>${esc(o.name)}</b>${o.phone ? ` · 📞 ${esc(o.phone)}` : ""}</p>
+        <p>${o.mode === "delivery" ? `🚚 A domicilio: ${esc(o.address)}` : "🏪 Recoge en tienda"}</p>
+        <p>🕒 ${esc(o.time || "Lo antes posible")}${o.payment ? ` · 💳 ${esc(o.payment)}` : ""}</p>
+        <ul class="order-items">${o.items.map((l) => `<li><span>${esc(l.qty)} × ${esc(l.name)}${l.detail ? ` <small>(${esc(l.detail)})</small>` : ""}</span><span>${euro(l.qty * l.unit)}</span></li>`).join("")}</ul>
+        ${o.notes ? `<p class="order-notes">📝 ${esc(o.notes)}</p>` : ""}
+      </div>
+      <div class="order-foot">
+        <span>${o.deliveryFee ? `Envío ${euro(o.deliveryFee)} · ` : ""}<b>Total ${euro(o.total)}</b></span>
+        <span class="row-actions">${reply}<button type="button" class="icon-btn danger" data-action="delete-order" aria-label="Borrar pedido ${esc(o.code)}">🗑️</button></span>
+      </div>
+    </li>`;
+  }).join("") || `<li class="empty-orders">${orders.length ? "No hay pedidos con ese estado." : "Todavía no hay pedidos. Cuando un cliente envíe uno por WhatsApp desde la web, aparecerá aquí."}</li>`;
+}
+
+$("#ordersList").addEventListener("change", async (e) => {
+  if (e.target.dataset.action !== "status") return;
+  const o = orders.find((x) => x.id === e.target.closest("[data-id]").dataset.id);
+  const prev = o.status;
+  o.status = e.target.value;
+  renderOrders();
+  try {
+    await DB.updateOrderStatus(o.id, o.status);
+    toast(`${o.code}: ${STATUSES[o.status]}`);
+  } catch (err) {
+    o.status = prev;
+    renderOrders();
+    toast(errorText(err));
+  }
+});
+
+$("#ordersList").addEventListener("click", async (e) => {
+  const btn = e.target.closest("button[data-action=delete-order]");
+  if (!btn) return;
+  const o = orders.find((x) => x.id === btn.closest("[data-id]").dataset.id);
+  if (!(await askConfirm(`¿Borrar el pedido ${o.code} de ${o.name}?`))) return;
+  try {
+    await DB.removeOrder(o.id);
+    orders = orders.filter((x) => x.id !== o.id);
+    knownOrderIds.delete(o.id);
+    renderOrders();
+    toast(`🗑️ Pedido ${o.code} borrado`);
+  } catch (err) {
+    toast(errorText(err));
+  }
+});
+
+// ==========================================================
+// Ajustes del negocio
+// ==========================================================
+const sForm = $("#settingsForm");
+
+async function loadSettings() {
+  try { settings = await DB.getSettings(); } catch (err) { toast(errorText(err)); }
+  fillSettings();
+  renderSetupWarning();
+}
+
+function fillSettings() {
+  const s = settings;
+  const f = sForm.elements;
+  ["whatsapp", "businessName", "tagline", "address", "mapsUrl", "phone", "email", "about", "announcement", "instagram", "facebook", "tiktok"]
+    .forEach((k) => { f[k].value = s[k] || ""; });
+  f.deliveryEnabled.checked = s.delivery.enabled;
+  f.pickupEnabled.checked = s.pickup.enabled;
+  f.deliveryFee.value = s.delivery.fee;
+  f.deliveryFreeFrom.value = s.delivery.freeFrom;
+  f.deliveryMin.value = s.delivery.minOrder;
+  f.deliveryEta.value = s.delivery.eta;
+  f.deliveryZone.value = s.delivery.zone;
+  f.pickupEta.value = s.pickup.eta;
+
+  $("#paymentChecks").innerHTML = PAYMENT_OPTIONS.map((p) => `
+    <label><input type="checkbox" name="pay" value="${esc(p)}" ${s.payments.includes(p) ? "checked" : ""} /> ${esc(p)}</label>`).join("");
+  f.paymentsExtra.value = s.payments.filter((p) => !PAYMENT_OPTIONS.includes(p)).join(", ");
+
+  $("#hoursGrid").innerHTML = WEEK_ORDER.map((d) => {
+    const h = s.hours[d];
+    return `
+    <div class="hours-row ${h.closed ? "is-closed" : ""}" data-day="${d}">
+      <span class="day">${DAYS[d]}</span>
+      <label class="closed-toggle"><input type="checkbox" data-field="closed" ${h.closed ? "checked" : ""} /> Cerrado</label>
+      <label><span class="sr-only">Abre</span><input type="time" data-field="open" value="${esc(h.open)}" /></label>
+      <span class="sep">a</span>
+      <label><span class="sr-only">Cierra</span><input type="time" data-field="close" value="${esc(h.close)}" /></label>
+    </div>`;
+  }).join("");
+  updateWaCheck();
+}
+
+$("#hoursGrid").addEventListener("change", (e) => {
+  if (e.target.dataset.field === "closed") e.target.closest(".hours-row").classList.toggle("is-closed", e.target.checked);
+});
+
+function updateWaCheck() {
+  const n = normalizePhone(sForm.elements.whatsapp.value);
+  const el = $("#waCheck");
+  if (!n) el.textContent = "⚠️ Sin número, WhatsApp pedirá al cliente que elija a quién enviarlo.";
+  else if (n.length < 10 || n.length > 15) el.textContent = "⚠️ Parece que falta el prefijo del país (por ejemplo 34 para España).";
+  else el.textContent = `✅ Los pedidos llegarán a +${n}`;
+  $("#testWa").href = waLink(n, "✅ Mensaje de prueba desde la web de la heladería");
+  $("#testWa").hidden = !n;
+}
+sForm.elements.whatsapp.addEventListener("input", updateWaCheck);
+
+function readSettings() {
+  const f = sForm.elements;
+  const num = (v) => Math.max(0, Number(v) || 0);
+  const extra = f.paymentsExtra.value.split(",").map((x) => x.trim()).filter(Boolean);
+  const hours = settings.hours.map((h) => ({ ...h }));
+  $$(".hours-row", sForm).forEach((row) => {
+    const d = Number(row.dataset.day);
+    hours[d] = {
+      closed: $("[data-field=closed]", row).checked,
+      open: $("[data-field=open]", row).value || "12:00",
+      close: $("[data-field=close]", row).value || "22:00",
+    };
+  });
+  return mergeSettings({
+    ...settings,
+    whatsapp: normalizePhone(f.whatsapp.value),
+    businessName: f.businessName.value.trim(),
+    tagline: f.tagline.value.trim(),
+    address: f.address.value.trim(),
+    mapsUrl: safeUrl(f.mapsUrl.value.trim()),
+    phone: f.phone.value.trim(),
+    email: f.email.value.trim(),
+    about: f.about.value.trim(),
+    announcement: f.announcement.value.trim(),
+    instagram: safeUrl(f.instagram.value.trim()),
+    facebook: safeUrl(f.facebook.value.trim()),
+    tiktok: safeUrl(f.tiktok.value.trim()),
+    delivery: {
+      enabled: f.deliveryEnabled.checked,
+      fee: num(f.deliveryFee.value),
+      freeFrom: num(f.deliveryFreeFrom.value),
+      minOrder: num(f.deliveryMin.value),
+      eta: f.deliveryEta.value.trim() || "30-45 min",
+      zone: f.deliveryZone.value.trim(),
+    },
+    pickup: { enabled: f.pickupEnabled.checked, eta: f.pickupEta.value.trim() || "15 min" },
+    payments: [...$$("input[name=pay]:checked", sForm).map((i) => i.value), ...extra],
+    hours,
+  });
+}
+
+sForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const err = $("#settingsError");
+  err.textContent = "";
+  const next = readSettings();
+  if (!next.businessName) return (err.textContent = "Escribe el nombre del negocio.");
+  if (!next.delivery.enabled && !next.pickup.enabled) return (err.textContent = "Activa al menos un tipo de pedido: a domicilio o recoger en tienda.");
+  if (next.whatsapp && (next.whatsapp.length < 10 || next.whatsapp.length > 15)) return (err.textContent = "Revisa el número de WhatsApp: debe llevar el prefijo del país.");
+  const bad = ["mapsUrl", "instagram", "facebook", "tiktok"].find((k) => sForm.elements[k].value.trim() && !next[k]);
+  if (bad) return (err.textContent = "Los enlaces deben empezar por https://");
+
+  const btn = $("#saveSettings");
+  btn.disabled = true;
+  try {
+    await DB.saveSettings(next);
+    settings = next;
+    fillSettings();
+    renderSetupWarning();
+    toast("💾 Ajustes guardados. La web ya muestra los cambios.");
+  } catch (e2) {
+    err.textContent = errorText(e2);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+function renderSetupWarning() {
+  const el = $("#setupWarning");
+  const missing = [];
+  if (!settings.whatsapp) missing.push("tu número de WhatsApp");
+  if (!settings.phone && !settings.email) missing.push("un teléfono o email de contacto");
+  el.hidden = !missing.length;
+  el.innerHTML = missing.length
+    ? `⚠️ Te falta poner ${missing.map(esc).join(" y ")}. <button type="button" class="btn-link" data-goto="ajustes">Ir a Ajustes</button>`
+    : "";
+}
+$("#setupWarning").addEventListener("click", (e) => { if (e.target.closest("[data-goto]")) setTab("ajustes"); });
 
 init();

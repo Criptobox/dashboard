@@ -130,7 +130,73 @@ create policy "categorias: modificar" on public.categorias
 create policy "categorias: borrar" on public.categorias
   for delete to authenticated using (public.is_admin());
 
--- 5) Almacenamiento de fotos (bucket público "productos")
+-- 5) Ajustes del negocio (WhatsApp, horario, envíos…). Una sola fila con id = 1.
+create table if not exists public.ajustes (
+  id         integer primary key default 1 check (id = 1),
+  data       jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+drop trigger if exists ajustes_updated_at on public.ajustes;
+create trigger ajustes_updated_at
+  before update on public.ajustes
+  for each row execute function public.touch_updated_at();
+
+alter table public.ajustes enable row level security;
+
+drop policy if exists "ajustes: leer"      on public.ajustes;
+drop policy if exists "ajustes: crear"     on public.ajustes;
+drop policy if exists "ajustes: modificar" on public.ajustes;
+
+create policy "ajustes: leer" on public.ajustes
+  for select using (true);
+create policy "ajustes: crear" on public.ajustes
+  for insert to authenticated with check (public.is_admin());
+create policy "ajustes: modificar" on public.ajustes
+  for update to authenticated using (public.is_admin()) with check (public.is_admin());
+
+-- 6) Pedidos que llegan por WhatsApp (se guarda una copia para el panel)
+--    Cualquiera puede CREAR un pedido, pero solo los admins pueden verlos o cambiarlos.
+create table if not exists public.pedidos (
+  id             uuid primary key default gen_random_uuid(),
+  code           text not null check (char_length(code) between 1 and 20),
+  created_at     timestamptz not null default now(),
+  customer_name  text not null check (char_length(customer_name) between 1 and 80),
+  customer_phone text check (char_length(customer_phone) <= 30),
+  mode           text not null check (mode in ('delivery', 'pickup')),
+  address        text check (char_length(address) <= 200),
+  preferred_time text check (char_length(preferred_time) <= 40),
+  payment        text check (char_length(payment) <= 40),
+  notes          text check (char_length(notes) <= 500),
+  items          jsonb not null check (
+                   jsonb_typeof(items) = 'array'
+                   and jsonb_array_length(items) between 1 and 60
+                   and octet_length(items::text) <= 20000),
+  subtotal       numeric(8, 2) not null check (subtotal >= 0),
+  delivery_fee   numeric(6, 2) not null default 0 check (delivery_fee >= 0),
+  total          numeric(8, 2) not null check (total >= 0),
+  status         text not null default 'nuevo'
+                 check (status in ('nuevo', 'preparando', 'listo', 'entregado', 'cancelado'))
+);
+create index if not exists pedidos_created_at_idx on public.pedidos (created_at desc);
+
+alter table public.pedidos enable row level security;
+
+drop policy if exists "pedidos: crear"     on public.pedidos;
+drop policy if exists "pedidos: leer"      on public.pedidos;
+drop policy if exists "pedidos: modificar" on public.pedidos;
+drop policy if exists "pedidos: borrar"    on public.pedidos;
+
+create policy "pedidos: crear" on public.pedidos
+  for insert to anon, authenticated with check (status = 'nuevo');
+create policy "pedidos: leer" on public.pedidos
+  for select to authenticated using (public.is_admin());
+create policy "pedidos: modificar" on public.pedidos
+  for update to authenticated using (public.is_admin()) with check (public.is_admin());
+create policy "pedidos: borrar" on public.pedidos
+  for delete to authenticated using (public.is_admin());
+
+-- 7) Almacenamiento de fotos (bucket público "productos")
 insert into storage.buckets (id, name, public)
 values ('productos', 'productos', true)
 on conflict (id) do nothing;
@@ -149,7 +215,7 @@ create policy "fotos: modificar" on storage.objects
 create policy "fotos: borrar" on storage.objects
   for delete to authenticated using (bucket_id = 'productos' and public.is_admin());
 
--- 6) Da permisos de admin a tu correo (cámbialo por el tuyo).
+-- 8) Da permisos de admin a tu correo (cámbialo por el tuyo).
 --    Debe ser el mismo correo del usuario creado en Authentication → Users.
 insert into public.admins (email) values ('tu-correo@ejemplo.com')
 on conflict (email) do nothing;

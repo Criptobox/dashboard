@@ -55,7 +55,15 @@
   </section>
 
   <!-- Panel -->
-  <main class="admin-grid hidden" id="appView">
+  <div class="hidden" id="appView">
+  <p class="setup-warning" id="setupWarning" hidden></p>
+  <nav class="tabs" role="tablist" aria-label="Secciones del panel">
+    <button type="button" role="tab" class="tab" data-tab="carta" aria-selected="true">🍦 Carta</button>
+    <button type="button" role="tab" class="tab" data-tab="pedidos" aria-selected="false">🧾 Pedidos <span class="tab-badge" id="newOrdersBadge" hidden>0</span></button>
+    <button type="button" role="tab" class="tab" data-tab="ajustes" aria-selected="false">⚙️ Ajustes</button>
+  </nav>
+
+  <main class="admin-grid tab-panel" id="tab-carta">
     <!-- Formulario de producto -->
     <section class="panel" id="formPanel">
       <div class="panel-head">
@@ -174,6 +182,113 @@
     </section>
     </div>
   </main>
+
+  <!-- Pedidos -->
+  <section class="admin-wrap tab-panel" id="tab-pedidos" hidden>
+    <div class="stats" id="orderStats"></div>
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Pedidos recibidos</h2>
+        <div class="head-actions">
+          <select id="orderFilter" aria-label="Filtrar pedidos por estado">
+            <option value="">Todos</option>
+            <option value="nuevo">Nuevos</option>
+            <option value="preparando">Preparando</option>
+            <option value="listo">Listos</option>
+            <option value="entregado">Entregados</option>
+            <option value="cancelado">Cancelados</option>
+          </select>
+          <button class="btn-ghost" type="button" id="refreshOrders">↻ Actualizar</button>
+        </div>
+      </div>
+      <p class="muted small">Cada pedido que un cliente envía por WhatsApp desde la web se guarda aquí. Ve cambiando su estado según lo prepares. La lista se actualiza sola cada 30 segundos.</p>
+      <ul class="orders" id="ordersList"></ul>
+    </div>
+  </section>
+
+  <!-- Ajustes -->
+  <section class="admin-wrap tab-panel" id="tab-ajustes" hidden>
+    <form id="settingsForm" class="settings" novalidate>
+      <div class="panel">
+        <h2>💬 WhatsApp</h2>
+        <p class="muted small">Número al que llegan los pedidos. Escríbelo con el prefijo del país, por ejemplo <b>34600111222</b> para España.</p>
+        <div class="form">
+          <label class="span-2">Número de WhatsApp
+            <input name="whatsapp" id="sWhatsapp" inputmode="tel" placeholder="34600111222" />
+            <span class="hint" id="waCheck"></span>
+          </label>
+          <a class="btn-ghost span-2 test-wa" id="testWa" href="#" target="_blank" rel="noopener">Enviarme un mensaje de prueba ↗</a>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>🏪 Tu negocio</h2>
+        <div class="form">
+          <label>Nombre <input name="businessName" id="sBusinessName" maxlength="40" required /></label>
+          <label>Eslogan <input name="tagline" id="sTagline" maxlength="80" /></label>
+          <label class="span-2">Dirección <input name="address" id="sAddress" maxlength="120" /></label>
+          <label class="span-2">Enlace de Google Maps (opcional)
+            <input name="mapsUrl" id="sMapsUrl" type="url" placeholder="https://maps.app.goo.gl/…" />
+            <span class="hint">Si lo dejas vacío se busca la dirección en Google Maps.</span>
+          </label>
+          <label>Teléfono <input name="phone" id="sPhone" type="tel" maxlength="30" /></label>
+          <label>Email <input name="email" id="sEmail" type="email" maxlength="80" /></label>
+          <label class="span-2">Sobre nosotros
+            <textarea name="about" id="sAbout" rows="4" maxlength="600"></textarea>
+          </label>
+          <label class="span-2">Aviso en la barra superior (vacío = sin aviso)
+            <input name="announcement" id="sAnnouncement" maxlength="100" placeholder="🚚 Envío gratis desde 20 €" />
+          </label>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>🚚 Pedidos y envíos</h2>
+        <div class="form">
+          <fieldset class="checks span-2">
+            <legend>Tipos de pedido</legend>
+            <label><input type="checkbox" name="deliveryEnabled" id="sDeliveryEnabled" /> Envío a domicilio</label>
+            <label><input type="checkbox" name="pickupEnabled" id="sPickupEnabled" /> Recoger en tienda</label>
+          </fieldset>
+          <label>Coste de envío (€) <input name="deliveryFee" id="sDeliveryFee" type="number" min="0" step="0.1" /></label>
+          <label>Envío gratis desde (€) <input name="deliveryFreeFrom" id="sDeliveryFreeFrom" type="number" min="0" step="0.5" />
+            <span class="hint">0 = nunca gratis</span></label>
+          <label>Pedido mínimo a domicilio (€) <input name="deliveryMin" id="sDeliveryMin" type="number" min="0" step="0.5" /></label>
+          <label>Tiempo de entrega <input name="deliveryEta" id="sDeliveryEta" maxlength="30" placeholder="30-45 min" /></label>
+          <label class="span-2">Zona de reparto <input name="deliveryZone" id="sDeliveryZone" maxlength="120" /></label>
+          <label>Tiempo para recoger <input name="pickupEta" id="sPickupEta" maxlength="30" placeholder="15 min" /></label>
+          <fieldset class="checks">
+            <legend>Formas de pago</legend>
+            <div id="paymentChecks" class="checks"></div>
+          </fieldset>
+          <label class="span-2">Otras formas de pago (separadas por comas)
+            <input name="paymentsExtra" id="sPaymentsExtra" maxlength="120" placeholder="Transferencia, Vale regalo" />
+          </label>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>🕒 Horario</h2>
+        <p class="muted small">Si cierras después de medianoche, pon la hora de cierre del día siguiente (por ejemplo <b>01:00</b>).</p>
+        <div class="hours-grid" id="hoursGrid"></div>
+      </div>
+
+      <div class="panel">
+        <h2>📱 Redes sociales</h2>
+        <div class="form">
+          <label class="span-2">Instagram <input name="instagram" id="sInstagram" type="url" placeholder="https://instagram.com/tu-heladeria" /></label>
+          <label class="span-2">Facebook <input name="facebook" id="sFacebook" type="url" placeholder="https://facebook.com/tu-heladeria" /></label>
+          <label class="span-2">TikTok <input name="tiktok" id="sTiktok" type="url" placeholder="https://tiktok.com/@tu-heladeria" /></label>
+        </div>
+      </div>
+
+      <div class="save-bar">
+        <p class="form-error" id="settingsError" role="alert"></p>
+        <button class="btn-primary" type="submit" id="saveSettings">Guardar ajustes</button>
+      </div>
+    </form>
+  </section>
+  </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 

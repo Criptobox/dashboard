@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Aviso legal y privacidad · Gelato Nube</title>
+  <meta name="description" content="Aviso legal, política de privacidad y política de cookies de la heladería." />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .legal { max-width: 820px; margin: 0 auto; padding: 30px 16px 60px; display: grid; gap: 22px; }
+    .legal-card { padding: clamp(20px, 4vw, 36px); border-radius: var(--radius); background: var(--card); box-shadow: var(--shadow); }
+    .legal h1 { font-size: clamp(2rem, 5vw, 2.8rem); }
+    .legal h2 { font-size: 1.5rem; margin-bottom: 12px; }
+    .legal h3 { font-size: 1.05rem; margin: 16px 0 6px; }
+    .legal p, .legal li { color: var(--ink-soft); line-height: 1.6; }
+    .legal ul { padding-left: 20px; display: grid; gap: 4px; }
+    .legal .fill { color: var(--ink); font-weight: 800; }
+    .legal .todo { background: color-mix(in srgb, var(--lemon) 45%, transparent); color: var(--ink); padding: 0 4px; border-radius: 4px; font-weight: 800; }
+    .legal-nav { display: flex; flex-wrap: wrap; gap: 8px; }
+    .legal-nav a { padding: 8px 14px; border-radius: 999px; background: var(--card); color: var(--ink); font-weight: 800; text-decoration: none; }
+    .note { padding: 12px 16px; border-radius: 14px; background: color-mix(in srgb, var(--lemon) 30%, var(--card)); font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="bg-blobs" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+
+  <header class="topbar">
+    <a class="brand" href="./">
+      <span class="brand-icon" aria-hidden="true">🍦</span>
+      <span class="fill-name">Gelato Nube</span>
+    </a>
+    <nav class="nav"><a href="./">← Volver a la carta</a></nav>
+  </header>
+
+  <main class="legal">
+    <h1>Información legal</h1>
+    <nav class="legal-nav" aria-label="Apartados">
+      <a href="#aviso-legal">Aviso legal</a>
+      <a href="#privacidad">Privacidad</a>
+      <a href="#cookies">Cookies</a>
+    </nav>
+    <p class="note">Modelo orientativo. Completa los datos marcados en amarillo y revísalo con un profesional antes de publicar la web.</p>
+
+    <section class="legal-card" id="aviso-legal">
+      <h2>Aviso legal</h2>
+      <p>En cumplimiento de la Ley 34/2002, de Servicios de la Sociedad de la Información y de Comercio Electrónico (LSSI-CE), se informa de los datos del titular de esta web:</p>
+      <ul>
+        <li>Titular: <span class="todo">[Nombre y apellidos o razón social]</span>, con nombre comercial <span class="fill fill-name">Gelato Nube</span>.</li>
+        <li>NIF/CIF: <span class="todo">[NIF/CIF]</span></li>
+        <li>Domicilio: <span class="fill fill-address">[Dirección]</span></li>
+        <li>Email: <span class="fill fill-email">[Email]</span></li>
+        <li>Teléfono: <span class="fill fill-phone">[Teléfono]</span></li>
+      </ul>
+      <h3>Uso de la web</h3>
+      <p>La web muestra la carta del establecimiento y permite preparar un pedido que el usuario envía por WhatsApp. El pedido no se considera confirmado hasta que el establecimiento responde. Los precios incluyen IVA y pueden cambiar sin previo aviso; las fotos y dibujos son orientativos.</p>
+      <h3>Propiedad intelectual</h3>
+      <p>Los textos, diseño y logotipos de esta web pertenecen a su titular. No se permite su reproducción sin autorización.</p>
+      <h3>Alérgenos</h3>
+      <p>La información de ingredientes y alérgenos de cada producto se muestra en su tarjeta. Si tienes una alergia o intolerancia, indícalo en las notas del pedido y consúltanos antes de consumir.</p>
+    </section>
+
+    <section class="legal-card" id="privacidad">
+      <h2>Política de privacidad</h2>
+      <p>Tratamos tus datos conforme al Reglamento (UE) 2016/679 (RGPD) y la Ley Orgánica 3/2018 (LOPDGDD).</p>
+      <h3>Responsable</h3>
+      <p><span class="todo">[Nombre o razón social]</span> (<span class="fill fill-name">Gelato Nube</span>), <span class="fill fill-address">[Dirección]</span>, <span class="fill fill-email">[Email]</span>.</p>
+      <h3>Qué datos tratamos y para qué</h3>
+      <ul>
+        <li>Al hacer un pedido: nombre, teléfono (opcional), dirección de entrega, hora, forma de pago y notas. Los usamos solo para preparar y entregar tu pedido y contactarte sobre él.</li>
+        <li>Base legal: la ejecución del pedido que solicitas (art. 6.1.b RGPD).</li>
+        <li>Conservación: el tiempo necesario para gestionar el pedido y cumplir obligaciones legales.</li>
+      </ul>
+      <h3>Con quién se comparten</h3>
+      <ul>
+        <li>WhatsApp (Meta Platforms Ireland Ltd.): el pedido se envía a través de WhatsApp, que tiene su propia política de privacidad.</li>
+        <li>Supabase: proveedor donde se guarda una copia del pedido para gestionarlo.</li>
+        <li>Google Fonts: la web carga tipografías desde servidores de Google, que reciben tu dirección IP.</li>
+      </ul>
+      <h3>Tus derechos</h3>
+      <p>Puedes pedir acceso, rectificación, supresión, oposición, limitación o portabilidad de tus datos escribiendo a <span class="fill fill-email">[Email]</span>. También puedes reclamar ante la Agencia Española de Protección de Datos (aepd.es).</p>
+    </section>
+
+    <section class="legal-card" id="cookies">
+      <h2>Política de cookies</h2>
+      <p>Esta web <b>no usa cookies de publicidad ni de analítica</b>. Solo guarda en tu navegador (almacenamiento local) datos técnicos necesarios para que funcione:</p>
+      <ul>
+        <li><b>gelato-nube-pedido</b>: los productos de tu carrito, para no perderlos si recargas la página.</li>
+        <li><b>gelato-nube-cliente</b>: tu nombre, teléfono y dirección, para no tener que escribirlos en cada pedido.</li>
+        <li>Sesión del panel de administración: solo para el personal del establecimiento.</li>
+      </ul>
+      <p>Al ser estrictamente necesarios, no requieren consentimiento. Puedes borrarlos cuando quieras desde la configuración de tu navegador.</p>
+    </section>
+
+    <p class="muted-sm">Última actualización: septiembre de 2026</p>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="shared.js"></script>
+  <script src="db.js"></script>
+  <script>
+    // Rellena los datos del negocio desde los ajustes del panel
+    (async () => {
+      let s = mergeSettings(null);
+      try { s = await DB.getSettings(); } catch { /* se usan los datos por defecto */ }
+      const set = (cls, value) => $$(cls).forEach((el) => {
+        if (value) { el.textContent = value; el.classList.remove("todo"); }
+        else el.classList.add("todo");
+      });
+      set(".fill-name", s.businessName);
+      set(".fill-address", s.address);
+      set(".fill-email", s.email);
+      set(".fill-phone", s.phone || (s.whatsapp ? `+${normalizePhone(s.whatsapp)}` : ""));
+      document.title = `Aviso legal y privacidad · ${s.businessName}`;
+    })();
+  </script>
+</body>
+</html>

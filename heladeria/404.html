@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>Página no encontrada · Gelato Nube</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Nunito:wght@400;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .lost { min-height: 100vh; display: grid; place-items: center; text-align: center; padding: 24px 16px; }
+    .lost-box { display: grid; gap: 16px; justify-items: center; max-width: 460px; }
+    .lost h1 { font-size: clamp(3rem, 12vw, 6rem); line-height: 1; }
+    .lost p { color: var(--ink-soft); font-size: 1.1rem; }
+    .melt { font-size: 5rem; animation: wobble 3s ease-in-out infinite; }
+  </style>
+</head>
+<body>
+  <div class="bg-blobs" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+  <main class="lost">
+    <div class="lost-box">
+      <div class="melt" aria-hidden="true">🍦</div>
+      <h1 class="gradient-text">404</h1>
+      <p>Esta página se ha derretido. Vuelve a la carta, que allí sigue todo bien fresquito.</p>
+      <a class="btn-primary" href="./">Volver a la carta</a>
+    </div>
+  </main>
+</body>
+</html>
