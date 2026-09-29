@@ -18,7 +18,7 @@ Web estática (HTML + CSS + JavaScript) con la carta de una heladería artesanal
 - Página 404 propia y página legal (`legal.html`) con aviso legal, privacidad y cookies.
 - Accesible (enlace para saltar a la carta, foco visible, etiquetas), modo oscuro automático y respeto a "reducir movimiento".
 
-**Panel admin (`admin.html`)**
+**Panel admin (`admin/`)**
 - **Carta**: categorías (crear, renombrar, ordenar, borrar) y productos (crear, editar, foto, ocultar/mostrar con un interruptor, borrar).
 - **Pedidos**: copia de cada pedido enviado desde la web, con estados (nuevo, preparando, listo, entregado, cancelado), resumen de pedidos y ventas de hoy, aviso de pedidos nuevos, botón para responder al cliente por WhatsApp y actualización automática cada 30 segundos.
 - **Ajustes**: número de WhatsApp (con botón de prueba), nombre, eslogan, dirección, enlace de Maps, teléfono, email, texto "Sobre nosotros", aviso superior, envío a domicilio y recogida (coste, gratis desde, mínimo, zona, tiempos), formas de pago, horario de cada día y redes sociales.
@@ -27,16 +27,19 @@ Web estática (HTML + CSS + JavaScript) con la carta de una heladería artesanal
 
 ```
 heladeria/
-├── index.html            # Web pública
-├── admin.html            # Panel de administración
+├── index.html            # Web pública (la carta)
 ├── legal.html            # Aviso legal, privacidad y cookies
 ├── 404.html              # Página de "no encontrado"
-├── styles.css / admin.css
+├── styles.css            # Estilos de la web (el panel también los usa)
 ├── config.js             # ← Aquí van la URL y la clave de Supabase
 ├── shared.js             # Carta de ejemplo, ajustes por defecto, horario y mensaje de WhatsApp
-├── db.js                 # Datos: Supabase o modo demo
+├── db.js                 # Datos para clientes: leer la carta y enviar pedidos
 ├── script.js             # Lógica de la web pública
-├── admin.js              # Lógica del panel
+├── admin/                # ← Panel de administración, separado de la carta
+│   ├── index.html
+│   ├── admin.css
+│   ├── admin.js
+│   └── db-admin.js       # Crear, editar, borrar, pedidos, ajustes y sesión
 ├── supabase.sql          # Tablas y permisos para Supabase
 ├── icon.svg, icon-180.png, icon-512.png, manifest.webmanifest
 ├── og-image.jpg          # Imagen al compartir el enlace
@@ -44,9 +47,21 @@ heladeria/
 └── README.md
 ```
 
+### El panel va separado de la carta
+
+Un cliente que abre la carta **solo descarga** `index.html`, `styles.css`, `config.js`, `shared.js`, `db.js` y `script.js`:
+lo justo para ver la carta y enviar pedidos. Nada de la carpeta `admin/` (formularios, subida de fotos,
+gestión de pedidos, inicio de sesión) se descarga salvo que alguien entre en `/admin/`.
+
+- La carta no enlaza al panel cuando Supabase está conectado. Guárdate la dirección: `https://tu-web/admin/`.
+- En modo demo sí aparece un enlace "Panel admin (demo)" en el pie, para poder probarlo.
+- El panel lleva `noindex`, así que Google no lo muestra.
+- Aunque alguien encontrara la dirección, no puede cambiar nada: Supabase solo deja modificar datos
+  a los correos de la tabla `admins`.
+
 ## Primeros pasos
 
-1. Entra en `admin.html` → **Ajustes** y pon tu **número de WhatsApp** con el prefijo del país (por ejemplo `34600111222`).
+1. Entra en `admin/` (por ejemplo `https://tu-web/admin/`) → **Ajustes** y pon tu **número de WhatsApp** con el prefijo del país (por ejemplo `34600111222`).
    Pulsa *Enviarme un mensaje de prueba* para comprobarlo.
 2. Rellena dirección, teléfono, email, horario, envíos, formas de pago y redes.
 3. Revisa la carta en la pestaña **Carta**.
@@ -66,7 +81,7 @@ Si no pones número, WhatsApp pedirá al cliente que elija a quién enviarlo.
 Si `config.js` está vacío, la web funciona en **modo demo**: la carta y el panel usan datos guardados
 en el propio navegador, así puedes probarlo todo sin montar nada.
 
-- Entra en `admin.html` con **demo@gelatonube.es** / **helado123**.
+- Entra en `admin/` (o en el enlace "Panel admin (demo)" del pie de la carta) con **demo@gelatonube.es** / **helado123**.
 - Los cambios solo los ves tú, en ese navegador. El botón *Restaurar datos de ejemplo* lo deja como al principio.
 
 Para una carta real, que vean todos tus clientes, conecta Supabase:
@@ -81,7 +96,7 @@ Para una carta real, que vean todos tus clientes, conecta Supabase:
    (marca *Auto Confirm User*).
 4. Recomendado: en **Authentication → Sign In / Providers** desactiva *Allow new users to sign up*.
 5. En **Project Settings → API** copia la *Project URL* y la clave *anon public* en `config.js`.
-6. Abre `admin.html`, entra y pulsa **Importar la carta de ejemplo** (o crea tus productos desde cero).
+6. Abre `admin/`, entra y pulsa **Importar la carta de ejemplo** (o crea tus productos desde cero).
 
 > La clave *anon* es pública por diseño y puede ir en GitHub. **Nunca** pongas la clave `service_role`.
 > La seguridad la dan las políticas RLS: cualquiera puede ver los productos disponibles,
@@ -92,7 +107,7 @@ Para añadir otro administrador: crea su usuario en Authentication y ejecuta
 
 ## Uso en local
 
-Abre `index.html` en el navegador. Para el panel admin es mejor usar un servidor local,
+Abre `index.html` en el navegador. Para el panel admin (`admin/`) es mejor usar un servidor local,
 por ejemplo `npx serve .` o la extensión *Live Server* de VS Code.
 
 ## Antes de publicar (SEO)
@@ -106,8 +121,8 @@ para que la vista previa salga al compartir el enlace por WhatsApp o redes.
 GitHub Pages solo publica desde la raíz del repositorio o desde la carpeta `/docs`, así que:
 
 1. Crea un repositorio nuevo (por ejemplo `heladeria`).
-2. Sube **el contenido** de esta carpeta (`index.html`, `admin.html`, `styles.css`…) a la raíz del repositorio.
+2. Sube **el contenido** de esta carpeta (`index.html`, la carpeta `admin/`, `styles.css`…) a la raíz del repositorio.
 3. Ve a **Settings → Pages**, en *Source* elige **Deploy from a branch**, rama `main` y carpeta `/ (root)`.
 4. En uno o dos minutos la web estará en `https://<tu-usuario>.github.io/<repositorio>/`
-   y el panel en `https://<tu-usuario>.github.io/<repositorio>/admin.html`.
+   y el panel en `https://<tu-usuario>.github.io/<repositorio>/admin/`.
 5. La página `404.html` se usa automáticamente cuando alguien entra en una dirección que no existe.

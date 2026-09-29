@@ -621,6 +621,8 @@ function toast(msg) {
 }
 
 $("#year").textContent = new Date().getFullYear();
+// En modo demo se enseña el enlace al panel para poder probarlo. Con Supabase no aparece.
+$("#demoAdminLink").hidden = DB.mode !== "demo";
 loadCustomer();
 renderOrder();
 applySettings();

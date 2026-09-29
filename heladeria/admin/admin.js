@@ -2,6 +2,27 @@
 // Gelato Nube · Panel de administración (Supabase)
 // ==========================================================
 
+// Dibujos disponibles para cada producto
+const TYPES = {
+  cone: "Cucurucho",
+  cup: "Copa",
+  shake: "Batido",
+  donut: "Donut",
+  cupcake: "Cupcake",
+  drink: "Bebida fría",
+  coffee: "Bebida caliente",
+};
+
+// Convierte "Tartas caseras" en "tartas-caseras"
+function slugify(text) {
+  return String(text || "")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+}
+
+const PAYMENT_OPTIONS = ["Efectivo", "Tarjeta", "Bizum"];
+
 const views = { login: $("#loginView"), app: $("#appView") };
 const form = $("#productForm");
 const listEl = $("#productList");

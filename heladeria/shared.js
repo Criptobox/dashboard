@@ -4,7 +4,7 @@
 
 // Carta de ejemplo. Se muestra si Supabase no está configurado
 // y se puede importar a la base de datos desde el panel admin.
-// type: dibujo que se usa (ver TYPES más abajo)
+// type: dibujo que se usa (cone, cup, shake, donut, cupcake, drink, coffee)
 const DEFAULT_PRODUCTS = [
   {
     id: "vainilla", name: "Vainilla Bourbon", cat: "clasicos", type: "cone",
@@ -215,25 +215,6 @@ const DEFAULT_CATEGORIES = [
   { slug: "bebidas", name: "Bebidas", emoji: "☕", position: 6 },
 ];
 
-// Dibujos disponibles para cada producto
-const TYPES = {
-  cone: "Cucurucho",
-  cup: "Copa",
-  shake: "Batido",
-  donut: "Donut",
-  cupcake: "Cupcake",
-  drink: "Bebida fría",
-  coffee: "Bebida caliente",
-};
-
-// Convierte "Tartas caseras" en "tartas-caseras"
-function slugify(text) {
-  return String(text || "")
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
-    .slice(0, 40);
-}
-
 const $ = (sel, ctx = document) => ctx.querySelector(sel);
 const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
 const euro = (n) => Number(n || 0).toLocaleString("es-ES", { style: "currency", currency: "EUR" });
@@ -305,7 +286,6 @@ function colorVars(p) {
 // ==========================================================
 const DAYS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0]; // lunes primero
-const PAYMENT_OPTIONS = ["Efectivo", "Tarjeta", "Bizum"];
 
 const DEFAULT_SETTINGS = {
   businessName: "Gelato Nube",
